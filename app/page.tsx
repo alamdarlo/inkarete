@@ -243,7 +243,7 @@ export default function Home() {
             text-slate-500
             "
           >
-            مدیریت کارهای روزانه
+            مدیریت کارها 
           </p>
 
           <Link
@@ -255,7 +255,7 @@ export default function Home() {
             text-indigo-600
             "
           >
-            📜 تاریخچه
+            📜 کارات
           </Link>
         </header>
 
