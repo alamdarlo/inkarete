@@ -1,23 +1,77 @@
 {
+  "id": "/",
   "name": "این کارته",
-  "short_name": "این کارته",
-  "description": "مدیریت کارهای روزانه",
+  "short_name": "کارته",
+  "description": "مدیریت کارهای روزانه به صورت آفلاین",
   "lang": "fa",
   "dir": "rtl",
+
   "start_url": "/",
+  "scope": "/",
+
   "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+
+  "orientation": "portrait",
+
   "background_color": "#f8fafc",
   "theme_color": "#4f46e5",
+
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ]
+  ],
+
+  "shortcuts": [
+    {
+      "name": "کار جدید",
+      "short_name": "افزودن",
+      "description": "ایجاد یک کار جدید",
+      "url": "/?action=new",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "تاریخچه",
+      "short_name": "تاریخچه",
+      "description": "مشاهده فعالیت‌های قبلی",
+      "url": "/history",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+
+  "prefer_related_applications": false
 }

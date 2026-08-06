@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
 import { db, Task, Priority, Category } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 
@@ -223,7 +222,7 @@ export default function Home() {
       >
         <header
           className="
-          mb-5
+          mb-2
           "
         >
           <h1
@@ -233,23 +232,11 @@ export default function Home() {
             text-slate-800
             "
           >
-            📋 این کارته
+            📋 این کارته <span className="text-xs">( مدیریت کارها)</span>
           </h1>
-
-          <p
-            className="
-            mt-1
-            text-sm
-            text-slate-500
-            "
-          >
-            مدیریت کارها 
-          </p>
-
           <Link
             href="/history"
             className="
-            mt-3
             inline-block
             text-sm
             text-indigo-600
@@ -270,9 +257,7 @@ export default function Home() {
           shadow-sm
           "
         >
-          <div
-            className="flex flex-col gap-2 sm:flex-row "
-          >
+          <div className="flex flex-col gap-2 sm:flex-row ">
             <input
               value={task}
               onChange={(e) => setTask(e.target.value)}
