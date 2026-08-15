@@ -107,7 +107,7 @@ export default function CategoriesPage() {
   return (
     <main
       dir="rtl"
-      className="min-h-screen bg-slate-100 px-3 py-5 text-slate-800 dark:bg-slate-900 dark:text-slate-100 sm:px-5"
+      className="min-h-screen bg-slate-100 px-3 text-slate-800 dark:bg-slate-900 dark:text-slate-100 sm:px-5"
     >
       <div className="mx-auto max-w-xl">
         {/* Add Category */}
@@ -126,16 +126,17 @@ export default function CategoriesPage() {
               className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder:text-slate-400"
             />
 
-            <button
-              type="button"
+            <IconButton color="success"
               onClick={addCategory}
               disabled={!name.trim()}
               aria-label="افزودن دسته‌بندی"
               title="افزودن دسته‌بندی"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-green-600 transition hover:bg-green-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:text-green-400 dark:hover:bg-green-900/20"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
+               active:scale-95 disabled:cursor-not-allowed 
+              "
             >
               <AddCircleIcon fontSize="medium" />
-            </button>
+            </IconButton>
           </div>
         </section>
 
@@ -164,7 +165,7 @@ export default function CategoriesPage() {
                   <div className="flex shrink-0 items-center gap-2">
                     {/* Edit */}
 
-                    <button
+                    <IconButton color="default"
                       type="button"
                       onClick={() =>
                         requestEditCategory(category.id!, category.name)
@@ -173,14 +174,12 @@ export default function CategoriesPage() {
                       title="ویرایش دسته"
                       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition  active:scale-95"
                     >
-                      <IconButton aria-label="edit" color="default">
                         <EditOutlined fontSize="small" />
-                      </IconButton>
-                    </button>
+                    </IconButton>
 
                     {/* Delete */}
 
-                    <button
+                    <IconButton color="error"
                       type="button"
                       onClick={() =>
                         requestDeleteCategory(category.id!, category.name)
@@ -189,10 +188,8 @@ export default function CategoriesPage() {
                       title="حذف دسته"
                       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lgtransition active:scale-95"
                     >
-                      <IconButton aria-label="delete" color="error">
                         <DeleteOutlined fontSize="small" />
-                      </IconButton>
-                    </button>
+                    </IconButton>
                   </div>
                 </div>
               ))}

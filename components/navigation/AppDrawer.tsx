@@ -38,22 +38,30 @@ export default function AppDrawer({
   };
 
   return (
-    <Drawer
-      anchor="right"
-      open={open}
-      onClose={onClose}
-      slotProps={{
-        paper: {
-          sx: {
-            width: 280,
-            backgroundColor: "var(--drawer-bg)",
-            color: "var(--drawer-text)",
-          },
-          className:
-            "bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100",
+<Drawer
+  anchor="right"
+  open={open}
+  onClose={onClose}
+  slotProps={{
+    paper: {
+      sx: {
+        width: 280,
+        backgroundColor: "#ffffff",
+        color: "#0f172a",
+        opacity: 1,
+        "@media (prefers-color-scheme: dark)": {
+          backgroundColor: "#1e293b",
+          color: "#f1f5f9",
         },
-      }}
-    >
+      },
+    },
+    backdrop: {
+      sx: {
+        backgroundColor: "rgba(0, 0, 0, 0.55)",
+      },
+    },
+  }}
+>
       <Box
         className="w-full"
         role="presentation"

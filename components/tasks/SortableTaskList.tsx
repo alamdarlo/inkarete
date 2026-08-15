@@ -11,12 +11,21 @@ import {
   verticalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
-import { DeleteOutlined } from "@mui/icons-material";
 
 import { CSS } from "@dnd-kit/utilities";
 
-import { Task, CategoryItem, Priority } from "@/lib/db";
+import {
+  DeleteOutlined,
+  DragIndicator,
+} from "@mui/icons-material";
+
 import { IconButton } from "@mui/material";
+
+import {
+  Task,
+  CategoryItem,
+  Priority,
+} from "@/lib/db";
 
 type Props = {
   tasks: Task[];
@@ -97,8 +106,11 @@ function SortableTask({
         rounded-xl
         bg-white
         p-3
+        text-slate-800
         shadow-sm
         transition
+        dark:bg-slate-800
+        dark:text-slate-100
         ${
           isDragging
             ? "z-10 opacity-70 shadow-lg"
@@ -120,6 +132,7 @@ function SortableTask({
           {...attributes}
           {...listeners}
           aria-label="جابجایی کار"
+          title="جابجایی کار"
           className="
             flex
             h-8
@@ -130,11 +143,16 @@ function SortableTask({
             justify-center
             rounded-lg
             text-slate-400
+            transition
             hover:bg-slate-100
+            hover:text-slate-600
             active:cursor-grabbing
+            dark:text-slate-500
+            dark:hover:bg-slate-700
+            dark:hover:text-slate-300
           "
         >
-          ⋮⋮
+          <DragIndicator fontSize="small" />
         </button>
 
         {/* Checkbox */}
@@ -199,8 +217,8 @@ function SortableTask({
                 text-sm
                 ${
                   task.completed
-                    ? "text-slate-400 line-through"
-                    : "text-slate-700"
+                    ? "text-slate-400 line-through dark:text-slate-500"
+                    : "text-slate-700 dark:text-slate-200"
                 }
               `}
             >
@@ -219,6 +237,7 @@ function SortableTask({
                 truncate
                 text-xs
                 text-slate-400
+                dark:text-slate-500
               "
             >
               {category.name}
@@ -228,28 +247,19 @@ function SortableTask({
 
         {/* Delete */}
 
-<button
-  type="button"
-  onClick={() => onDelete(task)}
-  aria-label={`حذف ${task.title}`}
-  title="حذف"
-  className="
-    flex
-    h-8
-    w-8
-    shrink-0
-    items-center
-    justify-center
-    rounded-lg
-    transition
-    active:scale-95
-  "
->
-  <IconButton aria-label="edit" color="error">
-
-  <DeleteOutlined fontSize="small" />
-  </IconButton>
-</button>
+        <IconButton
+          onClick={() => onDelete(task)}
+          aria-label={`حذف ${task.title}`}
+          title="حذف"
+          size="small"
+          color="error"
+          className="
+            shrink-0
+            transition
+          "
+        >
+          <DeleteOutlined fontSize="small" />
+        </IconButton>
       </div>
     </article>
   );
@@ -294,6 +304,8 @@ export default function SortableTaskList({
           text-sm
           text-slate-400
           shadow-sm
+          dark:bg-slate-800
+          dark:text-slate-500
         "
       >
         هنوز کاری اضافه نکردی 🙂

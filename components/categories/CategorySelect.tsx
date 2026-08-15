@@ -17,8 +17,7 @@ export default function CategorySelect({
 }: Props) {
   const [open, setOpen] = useState(false);
 
-  const containerRef =
-    useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const categories =
     useLiveQuery(
@@ -73,17 +72,13 @@ export default function CategorySelect({
     categoryId: number,
   ) => {
     onChange(categoryId);
-
     setOpen(false);
   };
 
   return (
     <div
       ref={containerRef}
-      className={`
-        relative
-        ${className}
-      `}
+      className={`relative ${className}`}
     >
       {/* Selected Category */}
 
@@ -102,6 +97,7 @@ export default function CategorySelect({
           gap-2
           rounded-lg
           border
+          border-slate-200
           bg-white
           px-3
           py-2
@@ -111,11 +107,13 @@ export default function CategorySelect({
           transition
           focus:ring-2
           focus:ring-indigo-500
+          dark:border-slate-600
+          dark:bg-slate-700
+          dark:text-slate-100
         "
       >
         <span>
-          {selected?.name ??
-            "انتخاب دسته"}
+          {selected?.name ?? "انتخاب دسته"}
         </span>
 
         <span
@@ -123,11 +121,8 @@ export default function CategorySelect({
             text-xs
             text-slate-400
             transition-transform
-            ${
-              open
-                ? "rotate-180"
-                : ""
-            }
+            dark:text-slate-300
+            ${open ? "rotate-180" : ""}
           `}
         >
           ▾
@@ -149,9 +144,12 @@ export default function CategorySelect({
             overflow-hidden
             rounded-xl
             border
+            border-slate-200
             bg-white
             p-1
             shadow-lg
+            dark:border-slate-600
+            dark:bg-slate-800
           "
         >
           {categories.length === 0 ? (
@@ -162,55 +160,51 @@ export default function CategorySelect({
                 text-center
                 text-sm
                 text-slate-400
+                dark:text-slate-500
               "
             >
               دسته‌ای وجود ندارد
             </div>
           ) : (
-            categories.map(
-              (category) => {
-                if (!category.id) {
-                  return null;
-                }
+            categories.map((category) => {
+              if (!category.id) {
+                return null;
+              }
 
-                const isSelected =
-                  category.id ===
-                  value;
+              const isSelected =
+                category.id === value;
 
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    role="option"
-                    aria-selected={
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() =>
+                    handleSelect(
+                      category.id!,
+                    )
+                  }
+                  className={`
+                    flex
+                    w-full
+                    items-center
+                    rounded-lg
+                    px-3
+                    py-2
+                    text-sm
+                    transition
+                    ${
                       isSelected
+                        ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                        : "text-slate-700 hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-700"
                     }
-                    onClick={() =>
-                      handleSelect(
-                        category.id!,
-                      )
-                    }
-                    className={`
-                      flex
-                      w-full
-                      items-center
-                      rounded-lg
-                      px-3
-                      py-2
-                      text-sm
-                      transition
-                      ${
-                        isSelected
-                          ? "bg-indigo-50 text-indigo-700"
-                          : "text-slate-700 hover:bg-slate-50"
-                      }
-                    `}
-                  >
-                    {category.name}
-                  </button>
-                );
-              },
-            )
+                  `}
+                >
+                  {category.name}
+                </button>
+              );
+            })
           )}
         </div>
       )}

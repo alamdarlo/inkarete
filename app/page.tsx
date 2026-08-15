@@ -8,6 +8,7 @@ import TaskProgress from "@/components/tasks/TaskProgress";
 import SortableTaskList from "@/components/tasks/SortableTaskList";
 import PrioritySelect from "@/components/tasks/PrioritySelect";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { IconButton } from "@mui/material";
 
 export default function Home() {
   const [task, setTask] = useState("");
@@ -138,7 +139,7 @@ export default function Home() {
   return (
     <main
       dir="rtl"
-      className="min-h-screen bg-slate-100 px-3 py-5 dark:bg-slate-900 sm:px-5"
+      className="min-h-screen bg-slate-100 px-3  dark:bg-slate-900 sm:px-5"
     >
       <div className="mx-auto max-w-xl">
         {/* Add Task */}
@@ -160,13 +161,16 @@ export default function Home() {
 
             <CategorySelect value={categoryId} onChange={setCategoryId} />
 
-            <button
+            <IconButton
+            color="success"
               onClick={addTask}
               disabled={!categories.length}
-              className="rounded-lg px-4 py-2 text-sm text-white transition hover:transform-fill disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg px-4 py-2 text-sm 
+              text-white transition hover:transform-fill 
+              disabled:cursor-not-allowed "
             >
               <AddCircleIcon color="success"  fontSize="medium" />
-            </button>
+            </IconButton>
           </div>
         </section>
 
