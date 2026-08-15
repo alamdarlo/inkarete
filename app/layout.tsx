@@ -37,8 +37,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fa" dir="rtl">
-      <body className="min-h-screen bg-slate-100 dark:bg-slate-900">
+    <html
+      lang="fa"
+      dir="rtl"
+      className="bg-slate-100 dark:bg-slate-900"
+    >
+      <body className="min-h-screen bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
         <PwaProvider>
           <InstallBanner />
           <UpdateBanner />

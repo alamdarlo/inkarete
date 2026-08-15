@@ -46,93 +46,101 @@ export default function AppDrawer({
         paper: {
           sx: {
             width: 280,
-            bgcolor: "background.paper",
-            color: "text.primary",
+            backgroundColor: "var(--drawer-bg)",
+            color: "var(--drawer-text)",
           },
+          className:
+            "bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100",
         },
       }}
     >
       <Box
-        sx={{
-          width: "100%",
-        }}
+        className="w-full"
         role="presentation"
       >
         {/* Header */}
 
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            px: 2,
-            py: 1.5,
-          }}
-        >
-          <Box
-            sx={{
-              fontSize: "1.1rem",
-              fontWeight: 700,
-            }}
-          >
+        <Box className="flex items-center justify-between px-4 py-3">
+          <Box className="text-lg font-bold text-slate-800 dark:text-slate-100">
             این کارته
           </Box>
 
           <IconButton
             onClick={onClose}
             aria-label="بستن منو"
+            className="text-slate-600 dark:text-slate-300"
           >
             <Close />
           </IconButton>
         </Box>
 
-        <Divider />
+        <Divider className="border-slate-300 dark:border-s-taupe-50" />
 
         {/* Navigation */}
 
-        <List>
+        <List className="px-2">
           <ListItem disablePadding>
             <ListItemButton
               onClick={() => navigate("/")}
+              className="rounded-lg"
             >
-              <ListItemIcon>
+              <ListItemIcon className="min-w-10 text-slate-600 dark:text-slate-300">
                 <Home />
               </ListItemIcon>
 
-              <ListItemText className="text-right"
+              <ListItemText
+                className="text-right"
                 primary="کارهای امروز"
+                slotProps={{
+                  primary: {
+                    className:
+                      "text-slate-800 dark:text-slate-200",
+                  },
+                }}
               />
             </ListItemButton>
           </ListItem>
 
           <ListItem disablePadding>
             <ListItemButton
-              onClick={() =>
-                navigate("/categories")
-              }
+              onClick={() => navigate("/categories")}
+              className="rounded-lg"
             >
-              <ListItemIcon>
+              <ListItemIcon className="min-w-10 text-slate-600 dark:text-slate-300">
                 <Category />
               </ListItemIcon>
 
-              <ListItemText className="text-right"
+              <ListItemText
+                className="text-right"
                 primary="دسته‌بندی‌ها"
+                slotProps={{
+                  primary: {
+                    className:
+                      "text-slate-800 dark:text-slate-200",
+                  },
+                }}
               />
             </ListItemButton>
           </ListItem>
 
           <ListItem disablePadding>
             <ListItemButton
-              onClick={() =>
-                navigate("/history")
-              }
+              onClick={() => navigate("/history")}
+              className="rounded-lg"
             >
-              <ListItemIcon>
+              <ListItemIcon className="min-w-10 text-slate-600 dark:text-slate-300">
                 <History />
               </ListItemIcon>
 
-              <ListItemText className="text-right"
+              <ListItemText
+                className="text-right"
                 primary="تاریخچه"
+                slotProps={{
+                  primary: {
+                    className:
+                      "text-slate-800 dark:text-slate-200",
+                  },
+                }}
               />
             </ListItemButton>
           </ListItem>

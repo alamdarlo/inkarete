@@ -4,41 +4,58 @@ import { useState } from "react";
 import { db } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 
-type ActionFilter = "all" | "created" | "completed" | "deleted" | "updated";
+type ActionFilter =
+  | "all"
+  | "created"
+  | "completed"
+  | "deleted"
+  | "updated";
 
-type DateFilter = "all" | "today" | "week" | "month";
+type DateFilter =
+  | "all"
+  | "today"
+  | "week"
+  | "month";
 
 const actionLabels = {
   created: "ساخته شد",
-
   completed: "انجام شد",
-
   deleted: "حذف شد",
-
   updated: "ویرایش شد",
 };
 
 export default function HistoryPage() {
-  const [actionFilter, setActionFilter] = useState<ActionFilter>("created");
+  const [actionFilter, setActionFilter] =
+    useState<ActionFilter>("created");
 
-  const [dateFilter, setDateFilter] = useState<DateFilter>("today");
+  const [dateFilter, setDateFilter] =
+    useState<DateFilter>("today");
 
   const history =
     useLiveQuery(
-      () => db.history.orderBy("createdAt").reverse().toArray(),
-
+      () =>
+        db.history
+          .orderBy("createdAt")
+          .reverse()
+          .toArray(),
       [],
     ) || [];
 
   const checkDate = (time: number) => {
-    if (dateFilter === "all") return true;
+    if (dateFilter === "all") {
+      return true;
+    }
 
     const now = Date.now();
 
-    const day = 24 * 60 * 60 * 1000;
+    const day =
+      24 * 60 * 60 * 1000;
 
     if (dateFilter === "today") {
-      return new Date(time).toDateString() === new Date().toDateString();
+      return (
+        new Date(time).toDateString() ===
+        new Date().toDateString()
+      );
     }
 
     if (dateFilter === "week") {
@@ -52,56 +69,33 @@ export default function HistoryPage() {
     return true;
   };
 
-  const filtered = history.filter((item) => {
-    const actionOk = actionFilter === "all" || item.action === actionFilter;
+  const filtered = history.filter(
+    (item) => {
+      const actionOk =
+        actionFilter === "all" ||
+        item.action === actionFilter;
 
-    return actionOk && checkDate(item.createdAt);
-  });
+      return (
+        actionOk &&
+        checkDate(item.createdAt)
+      );
+    },
+  );
 
   return (
     <main
       dir="rtl"
-      className="
-min-h-screen
-bg-slate-100
-px-3
-py-5
-sm:px-5
-"
+      className="min-h-screen bg-slate-100 px-3 py-5 text-slate-800 dark:bg-slate-900 dark:text-slate-100 sm:px-5"
     >
-      <div
-        className="
-mx-auto
-max-w-xl
-"
-      >
-        <section
-          className="
-mb-3
-rounded-xl
-bg-white
-p-3
-shadow-sm
-"
-        >
-          <h2
-            className="
-mb-2
-text-sm
-font-bold
-text-slate-700
-"
-          >
+      <div className="mx-auto max-w-xl">
+        {/* Action Filter */}
+
+        <section className="mb-3 rounded-xl bg-white p-3 shadow-sm dark:bg-slate-800">
+          <h2 className="mb-2 text-sm font-bold text-slate-700 dark:text-slate-200">
             نوع فعالیت
           </h2>
 
-          <div
-            className="
-flex
-flex-wrap
-gap-2
-"
-          >
+          <div className="flex flex-wrap gap-2">
             {[
               ["all", "همه"],
               ["created", "ساخته"],
@@ -111,21 +105,17 @@ gap-2
             ].map(([id, title]) => (
               <button
                 key={id}
-                onClick={() => setActionFilter(id as ActionFilter)}
-                className={`
-rounded-lg
-px-3
-py-1.5
-text-xs
-transition
-
-${
-  actionFilter === id
-    ? "bg-indigo-600 text-white"
-    : "bg-slate-100 text-slate-700"
-}
-
-`}
+                type="button"
+                onClick={() =>
+                  setActionFilter(
+                    id as ActionFilter,
+                  )
+                }
+                className={`rounded-lg px-3 py-1.5 text-xs transition ${
+                  actionFilter === id
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                }`}
               >
                 {title}
               </button>
@@ -133,33 +123,14 @@ ${
           </div>
         </section>
 
-        <section
-          className="
-mb-4
-rounded-xl
-bg-white
-p-3
-shadow-sm
-"
-        >
-          <h2
-            className="
-mb-2
-text-sm
-font-bold
-text-slate-700
-"
-          >
+        {/* Date Filter */}
+
+        <section className="mb-4 rounded-xl bg-white p-3 shadow-sm dark:bg-slate-800">
+          <h2 className="mb-2 text-sm font-bold text-slate-700 dark:text-slate-200">
             بازه زمانی
           </h2>
 
-          <div
-            className="
-flex
-flex-wrap
-gap-2
-"
-          >
+          <div className="flex flex-wrap gap-2">
             {[
               ["all", "همه"],
               ["today", "امروز"],
@@ -168,20 +139,17 @@ gap-2
             ].map(([id, title]) => (
               <button
                 key={id}
-                onClick={() => setDateFilter(id as DateFilter)}
-                className={`
-rounded-lg
-px-3
-py-1.5
-text-xs
-
-${
-  dateFilter === id
-    ? "bg-emerald-600 text-white"
-    : "bg-slate-100 text-slate-700"
-}
-
-`}
+                type="button"
+                onClick={() =>
+                  setDateFilter(
+                    id as DateFilter,
+                  )
+                }
+                className={`rounded-lg px-3 py-1.5 text-xs transition ${
+                  dateFilter === id
+                    ? "bg-emerald-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                }`}
               >
                 {title}
               </button>
@@ -189,77 +157,31 @@ ${
           </div>
         </section>
 
-        <section
-          className="
-space-y-2
-"
-        >
+        {/* History */}
+
+        <section className="space-y-2">
           {filtered.length === 0 && (
-            <div
-              className="
-rounded-xl
-bg-white
-p-6
-text-center
-text-sm
-text-slate-400
-shadow-sm
-"
-            >
-              تاریخی پیدا نشد 🙂
+            <div className="rounded-xl bg-white p-6 text-center text-sm text-slate-400 shadow-sm dark:bg-slate-800 dark:text-slate-400">
+              تاریخی پیدا نشد
             </div>
           )}
 
           {filtered.map((item) => (
             <div
               key={item.id}
-              className="
-rounded-xl
-bg-white
-p-3
-shadow-sm
-"
+              className="rounded-xl bg-white p-3 shadow-sm dark:bg-slate-800"
             >
-              <div
-                className="
-flex
-items-center
-justify-between
-gap-3
-"
-              >
-                <span
-                  className="
-truncate
-text-sm
-text-slate-700
-"
-                >
+              <div className="flex items-center justify-between gap-3">
+                <span className="truncate text-sm text-slate-700 dark:text-slate-200">
                   {item.title}
                 </span>
 
-                <span
-                  className="
-shrink-0
-rounded-full
-bg-slate-100
-px-2
-py-1
-text-xs
-text-slate-600
-"
-                >
+                <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                   {actionLabels[item.action]}
                 </span>
               </div>
 
-              <div
-                className="
-mt-2
-text-xs
-text-slate-400
-"
-              >
+              <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">
                 {item.date}
               </div>
             </div>

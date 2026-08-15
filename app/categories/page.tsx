@@ -5,6 +5,9 @@ import { db } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import DeleteCategoryDialog from "@/components/categories/DeleteCategoryDialog";
 import EditCategoryDialog from "@/components/categories/EditCategoryDialog";
+import { DeleteOutlined, EditOutlined } from "@mui/icons-material";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { IconButton } from "@mui/material";
 
 export default function CategoriesPage() {
   const [name, setName] = useState("");
@@ -65,6 +68,10 @@ export default function CategoriesPage() {
     setDeleteName("");
   };
 
+  // -----------------------------
+  // Edit Category
+  // -----------------------------
+
   const requestEditCategory = (id: number, name: string) => {
     setEditId(id);
     setEditName(name);
@@ -100,37 +107,13 @@ export default function CategoriesPage() {
   return (
     <main
       dir="rtl"
-      className="
-        min-h-screen
-        bg-slate-100
-        px-3
-        py-5
-        sm:px-5
-      "
+      className="min-h-screen bg-slate-100 px-3 py-5 text-slate-800 dark:bg-slate-900 dark:text-slate-100 sm:px-5"
     >
-      <div
-        className="
-          mx-auto
-          max-w-xl
-        "
-      >
+      <div className="mx-auto max-w-xl">
         {/* Add Category */}
 
-        <section
-          className="
-            mb-4
-            rounded-xl
-            bg-white
-            p-3
-            shadow-sm
-          "
-        >
-          <div
-            className="
-              flex
-              gap-2
-            "
-          >
+        <section className="mb-4 rounded-xl bg-white p-3 shadow-sm dark:bg-slate-800">
+          <div className="flex gap-2">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -140,62 +123,27 @@ export default function CategoriesPage() {
                 }
               }}
               placeholder="نام دسته‌بندی جدید..."
-              className="
-                min-w-0
-                flex-1
-                rounded-lg
-                border
-                px-3
-                py-2
-                text-sm
-                outline-none
-                focus:ring-2
-                focus:ring-indigo-500
-              "
+              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder:text-slate-400"
             />
 
             <button
               type="button"
               onClick={addCategory}
               disabled={!name.trim()}
-              className="
-                shrink-0
-                rounded-lg
-                bg-indigo-600
-                px-4
-                py-2
-                text-sm
-                text-white
-                transition
-                hover:bg-indigo-700
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
+              aria-label="افزودن دسته‌بندی"
+              title="افزودن دسته‌بندی"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-green-600 transition hover:bg-green-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:text-green-400 dark:hover:bg-green-900/20"
             >
-              افزودن
+              <AddCircleIcon fontSize="medium" />
             </button>
           </div>
         </section>
 
         {/* Categories */}
 
-        <section
-          className="
-            overflow-hidden
-            rounded-xl
-            bg-white
-            shadow-sm
-          "
-        >
+        <section className="overflow-hidden rounded-xl bg-white shadow-sm dark:bg-slate-800">
           {categories.length === 0 ? (
-            <div
-              className="
-                p-6
-                text-center
-                text-sm
-                text-slate-400
-              "
-            >
+            <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">
               هنوز دسته‌بندی‌ای ایجاد نکرده‌ای.
             </div>
           ) : (
@@ -203,42 +151,17 @@ export default function CategoriesPage() {
               {categories.map((category) => (
                 <div
                   key={category.id}
-                  className="
-      flex
-      items-center
-      justify-between
-      gap-3
-      border-b
-      border-slate-100
-      px-4
-      py-3
-      last:border-b-0
-    "
+                  className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 dark:border-slate-700"
                 >
                   {/* Category Name */}
 
-                  <span
-                    className="
-        min-w-0
-        truncate
-        text-sm
-        font-medium
-        text-slate-700
-      "
-                  >
+                  <span className="min-w-0 truncate text-sm font-medium text-slate-700 dark:text-slate-200">
                     {category.name}
                   </span>
 
                   {/* Actions */}
 
-                  <div
-                    className="
-        flex
-        shrink-0
-        items-center
-        gap-2
-      "
-                  >
+                  <div className="flex shrink-0 items-center gap-2">
                     {/* Edit */}
 
                     <button
@@ -248,22 +171,11 @@ export default function CategoriesPage() {
                       }
                       aria-label={`ویرایش دسته ${category.name}`}
                       title="ویرایش دسته"
-                      className="
-          flex
-          h-8
-          w-8
-          shrink-0
-          items-center
-          justify-center
-          rounded-lg
-          bg-indigo-100
-          text-indigo-600
-          transition
-          hover:bg-indigo-200
-          active:scale-95
-        "
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition  active:scale-95"
                     >
-                      ✏️
+                      <IconButton aria-label="edit" color="default">
+                        <EditOutlined fontSize="small" />
+                      </IconButton>
                     </button>
 
                     {/* Delete */}
@@ -275,22 +187,11 @@ export default function CategoriesPage() {
                       }
                       aria-label={`حذف دسته ${category.name}`}
                       title="حذف دسته"
-                      className="
-          flex
-          h-8
-          w-8
-          shrink-0
-          items-center
-          justify-center
-          rounded-lg
-          bg-red-100
-          text-red-600
-          transition
-          hover:bg-red-200
-          active:scale-95
-        "
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lgtransition active:scale-95"
                     >
-                      🗑️
+                      <IconButton aria-label="delete" color="error">
+                        <DeleteOutlined fontSize="small" />
+                      </IconButton>
                     </button>
                   </div>
                 </div>
@@ -309,6 +210,7 @@ export default function CategoriesPage() {
         }}
         onConfirm={confirmDeleteCategory}
       />
+
       <EditCategoryDialog
         open={editId !== null}
         categoryName={editName}

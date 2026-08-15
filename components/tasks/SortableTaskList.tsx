@@ -11,10 +11,12 @@ import {
   verticalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
+import { DeleteOutlined } from "@mui/icons-material";
 
 import { CSS } from "@dnd-kit/utilities";
 
 import { Task, CategoryItem, Priority } from "@/lib/db";
+import { IconButton } from "@mui/material";
 
 type Props = {
   tasks: Task[];
@@ -226,30 +228,28 @@ function SortableTask({
 
         {/* Delete */}
 
-        <button
-          type="button"
-          onClick={() =>
-            onDelete(task)
-          }
-          aria-label={`حذف ${task.title}`}
-          title="حذف"
-          className="
-            flex
-            h-8
-            w-8
-            shrink-0
-            items-center
-            justify-center
-            rounded-lg
-            bg-red-100
-            text-red-600
-            transition
-            hover:bg-red-200
-            active:scale-95
-          "
-        >
-          🗑️
-        </button>
+<button
+  type="button"
+  onClick={() => onDelete(task)}
+  aria-label={`حذف ${task.title}`}
+  title="حذف"
+  className="
+    flex
+    h-8
+    w-8
+    shrink-0
+    items-center
+    justify-center
+    rounded-lg
+    transition
+    active:scale-95
+  "
+>
+  <IconButton aria-label="edit" color="error">
+
+  <DeleteOutlined fontSize="small" />
+  </IconButton>
+</button>
       </div>
     </article>
   );

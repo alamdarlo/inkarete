@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import AppMenu from "@/components/navigation/AppMenu";
+
 import {
   AssignmentOutlined,
   CategoryOutlined,
@@ -35,18 +36,8 @@ export default function AppHeader() {
     pageConfig[pathname as keyof typeof pageConfig] ??
     pageConfig["/"];
 
-  const PageIcon = config.icon;
-
   return (
-    <header
-      className="
-        mb-4
-        flex
-        items-center
-        justify-between
-        gap-3
-      "
-    >
+    <header className="mb-4 flex items-center justify-between gap-3">
       {/* Menu - Right */}
 
       <div className="shrink-0">
@@ -55,47 +46,16 @@ export default function AppHeader() {
 
       {/* Title - Left */}
 
-      <div
-        className="
-          flex
-          min-w-0
-          flex-1
-          items-center
-          justify-center
-          gap-2
-          text-left
-        "
-      >
+      <div className="flex min-w-0 flex-1 items-center justify-center gap-2 text-left">
         <div className="min-w-0">
-          <h1
-            className="
-              truncate
-              text-xl
-              font-bold
-              text-slate-800
-              sm:text-2xl
-            "
-          >
+          <h1 className="truncate text-xl font-bold text-slate-800 dark:text-slate-100 sm:text-2xl">
             {config.title}
           </h1>
 
-          <p
-            className="
-              mt-0.5
-              truncate
-              text-xs
-              text-slate-500
-              text-center
-            "
-          >
+          <p className="mt-0.5 truncate text-center text-xs text-slate-500 dark:text-slate-400">
             {config.subtitle}
           </p>
         </div>
-
-        {/* <PageIcon
-          className="shrink-0 text-slate-700"
-          fontSize="small"
-        /> */}
       </div>
     </header>
   );

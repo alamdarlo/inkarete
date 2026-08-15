@@ -7,6 +7,7 @@ import CategorySelect from "@/components/categories/CategorySelect";
 import TaskProgress from "@/components/tasks/TaskProgress";
 import SortableTaskList from "@/components/tasks/SortableTaskList";
 import PrioritySelect from "@/components/tasks/PrioritySelect";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 
 export default function Home() {
   const [task, setTask] = useState("");
@@ -157,27 +158,21 @@ export default function Home() {
               className="sm:w-32"
             />
 
-            <CategorySelect
-              value={categoryId}
-              onChange={setCategoryId}
-            />
+            <CategorySelect value={categoryId} onChange={setCategoryId} />
 
             <button
               onClick={addTask}
               disabled={!categories.length}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg px-4 py-2 text-sm text-white transition hover:transform-fill disabled:cursor-not-allowed disabled:opacity-50"
             >
-              افزودن
+              <AddCircleIcon color="success"  fontSize="medium" />
             </button>
           </div>
         </section>
 
         {/* Progress */}
 
-        <TaskProgress
-          completed={completed}
-          total={tasks.length}
-        />
+        <TaskProgress completed={completed} total={tasks.length} />
 
         {/* Tasks */}
 
