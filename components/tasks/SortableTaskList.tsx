@@ -1,9 +1,14 @@
 "use client";
 
+import { useRef, useState } from "react";
 import {
   DndContext,
   closestCenter,
   DragEndEvent,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 
 import {
@@ -14,18 +19,9 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 
-import {
-  DeleteOutlined,
-  DragIndicator,
-} from "@mui/icons-material";
+import { DragIndicator, DeleteOutlined } from "@mui/icons-material";
 
-import { IconButton } from "@mui/material";
-
-import {
-  Task,
-  CategoryItem,
-  Priority,
-} from "@/lib/db";
+import { Task, CategoryItem, Priority } from "@/lib/db";
 
 type Props = {
   tasks: Task[];
@@ -36,10 +32,7 @@ type Props = {
 
   onDelete: (task: Task) => void;
 
-  onReorder: (
-    activeId: number,
-    overId: number,
-  ) => void;
+  onReorder: (activeId: number, overId: number) => void;
 };
 
 type SortableTaskProps = {
@@ -56,9 +49,7 @@ type SortableTaskProps = {
 // Priority Color
 // -----------------------------
 
-const priorityColor = (
-  priority: Priority,
-) => {
+const priorityColor = (priority: Priority) => {
   if (priority === "high") {
     return "bg-red-500";
   }
@@ -69,6 +60,12 @@ const priorityColor = (
 
   return "bg-green-500";
 };
+
+// -----------------------------
+// Swipe Threshold
+// -----------------------------
+
+const SWIPE_DELETE_THRESHOLD = 100;
 
 // -----------------------------
 // Sortable Task
@@ -91,177 +88,210 @@ function SortableTask({
     id: task.id!,
   });
 
+  const [swipeX, setSwipeX] = useState(0);
+  const [swiping, setSwiping] = useState(false);
+
+  const pointerStart = useRef<{
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const pointerDirection = useRef<"horizontal" | "vertical" | null>(null);
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    pointerStart.current = {
+      x: event.clientX,
+      y: event.clientY,
+    };
+
+    pointerDirection.current = null;
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLElement>) => {
+    if (!pointerStart.current) {
+      return;
+    }
+
+    const deltaX = event.clientX - pointerStart.current.x;
+
+    const deltaY = event.clientY - pointerStart.current.y;
+
+    if (!pointerDirection.current) {
+      if (Math.abs(deltaX) < 8 && Math.abs(deltaY) < 8) {
+        return;
+      }
+
+      pointerDirection.current =
+        Math.abs(deltaX) > Math.abs(deltaY) ? "horizontal" : "vertical";
+    }
+
+    if (pointerDirection.current !== "horizontal") {
+      return;
+    }
+
+    if (deltaX < 0) {
+      setSwiping(true);
+      setSwipeX(Math.max(deltaX, -SWIPE_DELETE_THRESHOLD));
+    }
+  };
+
+  const handlePointerUp = async (event: React.PointerEvent<HTMLElement>) => {
+    if (!pointerStart.current) {
+      return;
+    }
+
+    const deltaX = event.clientX - pointerStart.current.x;
+
+    if (
+      pointerDirection.current === "horizontal" &&
+      deltaX <= -SWIPE_DELETE_THRESHOLD
+    ) {
+      setSwipeX(-500);
+
+      await new Promise((resolve) => setTimeout(resolve, 180));
+
+      onDelete(task);
+    } else {
+      setSwipeX(0);
+    }
+
+    setSwiping(false);
+    pointerStart.current = null;
+    pointerDirection.current = null;
+  };
+
+  const handlePointerCancel = () => {
+    setSwipeX(0);
+    setSwiping(false);
+    pointerStart.current = null;
+    pointerDirection.current = null;
+  };
+
   const style = {
-    transform: CSS.Transform.toString(
-      transform,
-    ),
-    transition,
+    transform:
+      swipeX !== 0
+        ? `translateX(${swipeX}px)`
+        : CSS.Transform.toString(transform),
+    transition: swiping ? "none" : transition,
   };
 
   return (
-    <article
-      ref={setNodeRef}
-      style={style}
-      className={`
-        rounded-xl
-        bg-white
-        p-3
-        text-slate-800
-        shadow-sm
-        transition
-        dark:bg-slate-800
-        dark:text-slate-100
-        ${
-          isDragging
-            ? "z-10 opacity-70 shadow-lg"
-            : "hover:shadow-md"
-        }
-      `}
-    >
-      <div
-        className="
-          flex
-          items-center
-          gap-3
-        "
+    <div className="relative overflow-hidden rounded-xl">
+      {/* Delete Background */}
+
+      {swiping && swipeX < 0 && (
+        <div className="absolute inset-0 flex items-center justify-start rounded-xl bg-red-500 px-5 text-white">
+          <DeleteOutlined />
+        </div>
+      )}
+      
+      {/* Task */}
+
+      <article
+        ref={setNodeRef}
+        style={style}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        className={`relative rounded-xl bg-white p-3 text-slate-800 shadow-sm transition dark:bg-slate-800 dark:text-slate-100 ${
+          isDragging ? "z-10 opacity-70 shadow-lg" : "hover:shadow-md"
+        }`}
       >
-        {/* Drag Handle */}
+        <div className="flex items-center gap-3">
+          {/* Drag Handle */}
 
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          aria-label="جابجایی کار"
-          title="جابجایی کار"
-          className="
-            flex
-            h-8
-            w-8
-            shrink-0
-            cursor-grab
-            items-center
-            justify-center
-            rounded-lg
-            text-slate-400
-            transition
-            hover:bg-slate-100
-            hover:text-slate-600
-            active:cursor-grabbing
-            dark:text-slate-500
-            dark:hover:bg-slate-700
-            dark:hover:text-slate-300
-          "
-        >
-          <DragIndicator fontSize="small" />
-        </button>
-
-        {/* Checkbox */}
-
-        <input
-          type="checkbox"
-          checked={task.completed}
-          onChange={() =>
-            onToggle(task)
-          }
-          className="
-            h-4
-            w-4
-            shrink-0
-            accent-emerald-500
-          "
-        />
-
-        {/* Task Content */}
-
-        <div
-          className="
-            min-w-0
-            flex-1
-          "
-        >
-          <div
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            aria-label="جابجایی کار"
+            title="جابجایی کار"
             className="
               flex
-              min-w-0
+              h-8
+              w-8
+              shrink-0
+              cursor-grab
+              touch-none
               items-center
-              gap-2
+              justify-center
+              rounded-lg
+              text-slate-400
+              transition
+              hover:bg-slate-100
+              hover:text-slate-600
+              active:cursor-grabbing
+              dark:text-slate-500
+              dark:hover:bg-slate-700
+              dark:hover:text-slate-300
             "
           >
-            {/* Priority */}
+            <DragIndicator fontSize="small" />
+          </button>
 
-            <span
-              title={
-                task.priority === "high"
-                  ? "اولویت زیاد"
-                  : task.priority ===
-                      "medium"
-                    ? "اولویت متوسط"
-                    : "اولویت کم"
-              }
-              className={`
-                h-2.5
-                w-2.5
-                shrink-0
-                rounded-full
-                ${priorityColor(
+          {/* Checkbox */}
+
+          <input
+            type="checkbox"
+            checked={task.completed}
+            onChange={() => onToggle(task)}
+            className="h-4 w-4 shrink-0 accent-emerald-500"
+          />
+
+          {/* Task Content */}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              {/* Priority */}
+
+              <span
+                title={
+                  task.priority === "high"
+                    ? "اولویت زیاد"
+                    : task.priority === "medium"
+                      ? "اولویت متوسط"
+                      : "اولویت کم"
+                }
+                className={`h-2.5 w-2.5 shrink-0 rounded-full ${priorityColor(
                   task.priority,
-                )}
-              `}
-            />
+                )}`}
+              />
 
-            {/* Title */}
+              {/* Title */}
 
-            <span
-              className={`
-                truncate
-                text-sm
-                ${
+              <span
+                className={`truncate text-sm ${
                   task.completed
                     ? "text-slate-400 line-through dark:text-slate-500"
                     : "text-slate-700 dark:text-slate-200"
-                }
-              `}
-            >
-              {task.title}
-            </span>
+                }`}
+              >
+                {task.title}
+              </span>
+            </div>
+
+            {/* Category */}
+
+            {category && (
+              <span
+                className="
+                  mt-1
+                  inline-block
+                  max-w-full
+                  truncate
+                  text-xs
+                  text-slate-400
+                  dark:text-slate-500
+                "
+              >
+                {category.name}
+              </span>
+            )}
           </div>
-
-          {/* Category */}
-
-          {category && (
-            <span
-              className="
-                mt-1
-                inline-block
-                max-w-full
-                truncate
-                text-xs
-                text-slate-400
-                dark:text-slate-500
-              "
-            >
-              {category.name}
-            </span>
-          )}
         </div>
-
-        {/* Delete */}
-
-        <IconButton
-          onClick={() => onDelete(task)}
-          aria-label={`حذف ${task.title}`}
-          title="حذف"
-          size="small"
-          color="error"
-          className="
-            shrink-0
-            transition
-          "
-        >
-          <DeleteOutlined fontSize="small" />
-        </IconButton>
-      </div>
-    </article>
+      </article>
+    </div>
   );
 }
 
@@ -276,9 +306,21 @@ export default function SortableTaskList({
   onDelete,
   onReorder,
 }: Props) {
-  const handleDragEnd = (
-    event: DragEndEvent,
-  ) => {
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 6,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
+      },
+    }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over) return;
@@ -287,10 +329,7 @@ export default function SortableTaskList({
       return;
     }
 
-    onReorder(
-      Number(active.id),
-      Number(over.id),
-    );
+    onReorder(Number(active.id), Number(over.id));
   };
 
   if (tasks.length === 0) {
@@ -315,25 +354,19 @@ export default function SortableTaskList({
 
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
       <SortableContext
-        items={tasks.map(
-          (task) => task.id!,
-        )}
-        strategy={
-          verticalListSortingStrategy
-        }
+        items={tasks.map((task) => task.id!)}
+        strategy={verticalListSortingStrategy}
       >
         <div className="space-y-2">
           {tasks.map((task) => {
-            const category =
-              categories.find(
-                (item) =>
-                  item.id ===
-                  task.categoryId,
-              );
+            const category = categories.find(
+              (item) => item.id === task.categoryId,
+            );
 
             return (
               <SortableTask
