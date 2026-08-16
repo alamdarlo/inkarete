@@ -44,7 +44,6 @@ type SortableTaskProps = {
   onDelete: (task: Task) => void;
 };
 
-
 // -----------------------------
 // Swipe Threshold
 // -----------------------------
@@ -223,44 +222,69 @@ function SortableTask({
             className="h-4 w-4 shrink-0 accent-emerald-500"
           />
 
-{/* Task Content */}
+          {/* Task Content */}
 
-<div className="min-w-0 flex-1">
-  {/* Title + Category */}
+          <div className="min-w-0 flex-1">
+            {/* Title + Category */}
 
-  <div className="flex min-w-0 items-center justify-between gap-3">
-    <span
-      className={`min-w-0 truncate text-sm ${
-        task.completed
-          ? "text-slate-400 line-through dark:text-slate-500"
-          : "text-slate-700 dark:text-slate-200"
-      }`}
-    >
-      {task.title}
-    </span>
+            <div className="flex min-w-0 items-center justify-between gap-3">
+              <span
+                className={`min-w-0 truncate text-sm ${
+                  task.completed
+                    ? "text-slate-400 line-through dark:text-slate-500"
+                    : "text-slate-700 dark:text-slate-200"
+                }`}
+              >
+                {task.title}
+              </span>
 
-    {category && (
-      <span className="shrink-0 truncate text-xs text-slate-400 dark:text-slate-500">
-        {category.name}
-      </span>
-    )}
-  </div>
+              {category && (
+                <span className="shrink-0 truncate text-xs text-slate-400 dark:text-slate-500">
+                  {category.name}
+                </span>
+              )}
+            </div>
 
-  {/* Scheduled Times */}
+            {/* Scheduled Times */}
 
-  {task.scheduledTimes?.length > 0 && (
-    <div
-      dir="ltr"
-      className="mt-1 flex items-center justify-start gap-1 text-xs text-slate-400 dark:text-slate-500"
-    >
-      <AccessTimeIcon sx={{ fontSize: 14 }} />
+            {task.scheduledTimes?.length > 0 && (
+              <div
+                dir="ltr"
+                className="mt-1 flex flex-wrap items-center justify-start gap-1"
+              >
+                <AccessTimeIcon
+                  sx={{
+                    fontSize: 14,
+                    color: "text.secondary",
+                  }}
+                />
 
-      <span>
-        {task.scheduledTimes.join(" · ")}
-      </span>
-    </div>
-  )}
-</div>
+                {task.scheduledTimes.map((time) => (
+                  <span
+                    key={time}
+                    className="
+                    inline-flex
+                    items-center
+                    rounded-md
+                    border
+                    border-slate-200
+                    bg-slate-50
+                    px-1.5
+                    py-0.5
+                    text-[11px]
+                    font-medium
+                    text-slate-500
+                    dark:border-slate-600
+                    dark:bg-slate-700/70
+                    dark:text-slate-300
+                  "
+                  >
+                    {time}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </article>
     </div>

@@ -168,11 +168,7 @@ export default function Home() {
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="flex flex-1 items-center gap-1">
-                <CategorySelect
-                  value={categoryId}
-                  onChange={setCategoryId}
-                  className="flex-1"
-                />
+                
 
                 <ScheduleSelect
                   value={scheduledDays}
@@ -183,6 +179,12 @@ export default function Home() {
                 <TimeSelect
                   value={scheduledTimes}
                   onChange={setScheduledTimes}
+                />
+
+                <CategorySelect
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  className="flex-1"
                 />
               </div>
 
