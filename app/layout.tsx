@@ -47,7 +47,7 @@ export default function RootLayout({
           <InstallBanner />
           <UpdateBanner />
 
-          <div className="mx-auto max-w-xl px-3 pt-5 sm:px-5">
+          <div className="mx-auto max-w-xl px-3 pt-2 sm:px-3">
             <AppHeader />
           </div>
 

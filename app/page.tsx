@@ -160,7 +160,7 @@ export default function Home() {
 
         {/* Tasks */}
 
-        <div className="min-h-0 flex-1 overflow-y-auto pb-4">
+        <div className="tasks-scroll min-h-0 flex-1 overflow-y-auto pb-4">
           <SortableTaskList tasks={tasks} categories={categories} onToggle={toggleTask} onDelete={deleteTask} onReorder={reorderTasks} />
         </div>
       </div>
