@@ -18,10 +18,9 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
-
 import { DragIndicator, DeleteOutlined } from "@mui/icons-material";
-
-import { Task, CategoryItem, Priority } from "@/lib/db";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { Task, CategoryItem } from "@/lib/db";
 
 type Props = {
   tasks: Task[];
@@ -45,21 +44,6 @@ type SortableTaskProps = {
   onDelete: (task: Task) => void;
 };
 
-// -----------------------------
-// Priority Color
-// -----------------------------
-
-const priorityColor = (priority: Priority) => {
-  if (priority === "high") {
-    return "bg-red-500";
-  }
-
-  if (priority === "medium") {
-    return "bg-yellow-400";
-  }
-
-  return "bg-green-500";
-};
 
 // -----------------------------
 // Swipe Threshold
@@ -184,7 +168,7 @@ function SortableTask({
           <DeleteOutlined />
         </div>
       )}
-      
+
       {/* Task */}
 
       <article
@@ -239,56 +223,44 @@ function SortableTask({
             className="h-4 w-4 shrink-0 accent-emerald-500"
           />
 
-          {/* Task Content */}
+{/* Task Content */}
 
-          <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 items-center gap-2">
-              {/* Priority */}
+<div className="min-w-0 flex-1">
+  {/* Title + Category */}
 
-              <span
-                title={
-                  task.priority === "high"
-                    ? "اولویت زیاد"
-                    : task.priority === "medium"
-                      ? "اولویت متوسط"
-                      : "اولویت کم"
-                }
-                className={`h-2.5 w-2.5 shrink-0 rounded-full ${priorityColor(
-                  task.priority,
-                )}`}
-              />
+  <div className="flex min-w-0 items-center justify-between gap-3">
+    <span
+      className={`min-w-0 truncate text-sm ${
+        task.completed
+          ? "text-slate-400 line-through dark:text-slate-500"
+          : "text-slate-700 dark:text-slate-200"
+      }`}
+    >
+      {task.title}
+    </span>
 
-              {/* Title */}
+    {category && (
+      <span className="shrink-0 truncate text-xs text-slate-400 dark:text-slate-500">
+        {category.name}
+      </span>
+    )}
+  </div>
 
-              <span
-                className={`truncate text-sm ${
-                  task.completed
-                    ? "text-slate-400 line-through dark:text-slate-500"
-                    : "text-slate-700 dark:text-slate-200"
-                }`}
-              >
-                {task.title}
-              </span>
-            </div>
+  {/* Scheduled Times */}
 
-            {/* Category */}
+  {task.scheduledTimes?.length > 0 && (
+    <div
+      dir="ltr"
+      className="mt-1 flex items-center justify-start gap-1 text-xs text-slate-400 dark:text-slate-500"
+    >
+      <AccessTimeIcon sx={{ fontSize: 14 }} />
 
-            {category && (
-              <span
-                className="
-                  mt-1
-                  inline-block
-                  max-w-full
-                  truncate
-                  text-xs
-                  text-slate-400
-                  dark:text-slate-500
-                "
-              >
-                {category.name}
-              </span>
-            )}
-          </div>
+      <span>
+        {task.scheduledTimes.join(" · ")}
+      </span>
+    </div>
+  )}
+</div>
         </div>
       </article>
     </div>
