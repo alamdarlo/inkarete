@@ -21,17 +21,16 @@ import { CSS } from "@dnd-kit/utilities";
 import { DragIndicator, DeleteOutlined } from "@mui/icons-material";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { Task, CategoryItem } from "@/lib/db";
+import { Checkbox } from "@mui/material";
+
 
 type Props = {
   tasks: Task[];
-
   categories: CategoryItem[];
-
   onToggle: (task: Task) => void;
-
   onDelete: (task: Task) => void;
-
   onReorder: (activeId: number, overId: number) => void;
+  showTaskTimes: boolean;
 };
 
 type SortableTaskProps = {
@@ -177,69 +176,82 @@ function SortableTask({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
-        className={`relative rounded-xl bg-white p-3 text-slate-800 shadow-sm transition dark:bg-slate-800 dark:text-slate-100 ${
+        className={`relative rounded-xl bg-white content-center px-3 h-14 text-slate-800 shadow-sm transition dark:bg-slate-800 dark:text-slate-100 ${
           isDragging ? "z-10 opacity-70 shadow-lg" : "hover:shadow-md"
         }`}
       >
         <div className="flex items-center gap-3">
-          {/* Drag Handle */}
-
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            aria-label="جابجایی کار"
-            title="جابجایی کار"
-            className="
-              flex
-              h-8
-              w-8
-              shrink-0
-              cursor-grab
-              touch-none
-              items-center
-              justify-center
-              rounded-lg
-              text-slate-400
-              transition
-              hover:bg-slate-100
-              hover:text-slate-600
-              active:cursor-grabbing
-              dark:text-slate-500
-              dark:hover:bg-slate-700
-              dark:hover:text-slate-300
-            "
-          >
-            <DragIndicator fontSize="small" />
-          </button>
-
-          {/* Checkbox */}
-
-          <input
-            type="checkbox"
-            checked={task.completed}
-            onChange={() => onToggle(task)}
-            className="h-4 w-4 shrink-0 accent-emerald-500"
-          />
-
-          {/* Task Content */}
+           {/* Task Content */}
 
           <div className="min-w-0 flex-1">
             {/* Title + Category */}
 
             <div className="flex min-w-0 items-center justify-between gap-3">
-              <span
-                className={`min-w-0 truncate text-sm ${
-                  task.completed
-                    ? "text-slate-400 line-through dark:text-slate-500"
-                    : "text-slate-700 dark:text-slate-200"
-                }`}
-              >
-                {task.title}
-              </span>
+              {/* Checkbox + Title */}
+
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                
+                 {/* Drag Handle */}
+
+                <button
+                  type="button"
+                  {...attributes}
+                  {...listeners}
+                  aria-label="جابجایی کار"
+                  title="جابجایی کار"
+                  className="
+                    flex
+                    h-8
+                    w-8
+                    shrink-0
+                    cursor-grab
+                    touch-none
+                    items-center
+                    justify-center
+                    rounded-lg
+                    text-slate-400
+                    transition
+                    hover:bg-slate-100
+                    hover:text-slate-600
+                    active:cursor-grabbing
+                    dark:text-slate-500
+                    dark:hover:bg-slate-700
+                    dark:hover:text-slate-300
+                  "
+                >
+                  <DragIndicator fontSize="small" />
+                </button>
+                <input
+                  type="checkbox"
+                  checked={task.completed}
+                  onChange={() => onToggle(task)}
+                  className="h-4 w-4 shrink-0 accent-emerald-500"
+                />
+
+                <span
+                  className={`min-w-0 truncate text-sm ${
+                    task.completed
+                      ? "text-slate-400 line-through dark:text-slate-500"
+                      : "text-slate-700 dark:text-slate-200"
+                  }`}
+                >
+                  {task.title}
+                </span>
+              </div>
+
+              {/* Category */}
 
               {category && (
-                <span className="shrink-0 truncate text-xs text-slate-400 dark:text-slate-500">
+                <span
+                  className="
+                  shrink-0
+                  max-w-[35%]
+                  truncate
+                  text-xs
+                  text-slate-400
+                  dark:text-slate-500
+                "
+                >
                   {category.name}
                 </span>
               )}
@@ -250,7 +262,7 @@ function SortableTask({
             {task.scheduledTimes?.length > 0 && (
               <div
                 dir="ltr"
-                className="mt-1 flex flex-wrap items-center justify-start gap-1"
+                className="mt-0 flex flex-wrap items-center justify-start gap-1"
               >
                 <AccessTimeIcon
                   sx={{
@@ -259,29 +271,58 @@ function SortableTask({
                   }}
                 />
 
-                {task.scheduledTimes.map((time) => (
-                  <span
-                    key={time}
-                    className="
-                    inline-flex
-                    items-center
-                    rounded-md
-                    border
-                    border-slate-200
-                    bg-slate-50
-                    px-1.5
-                    py-0.5
-                    text-[11px]
-                    font-medium
-                    text-slate-500
-                    dark:border-slate-600
-                    dark:bg-slate-700/70
-                    dark:text-slate-300
-                  "
-                  >
-                    {time}
-                  </span>
-                ))}
+                {task.scheduledTimes.map((time) => {
+                  const [hours, minutes] = time.split(":").map(Number);
+
+                  const now = new Date();
+
+                  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+                  const timeMinutes = hours * 60 + minutes;
+
+                  const difference = Math.abs(timeMinutes - currentMinutes);
+
+                  const isNear = difference <= 60;
+
+                  return (
+                    <span
+                      key={time}
+                      className={`
+                      inline-flex
+                      items-center
+                      rounded-md
+                      border
+                      px-1.5
+                      py-0
+                      text-[11px]
+                      font-medium
+                      transition-all
+                      ${
+                        isNear
+                          ? `
+                            border-indigo-300
+                            bg-indigo-50
+                            text-indigo-700
+                            shadow-sm
+                            dark:border-indigo-500/50
+                            dark:bg-indigo-950/60
+                            dark:text-indigo-300
+                          `
+                          : `
+                            border-slate-200
+                            bg-slate-50
+                            text-slate-500
+                            dark:border-slate-600
+                            dark:bg-slate-700/70
+                            dark:text-slate-300
+                          `
+                      }
+                    `}
+                    >
+                      {time}
+                    </span>
+                  );
+                })}
               </div>
             )}
           </div>

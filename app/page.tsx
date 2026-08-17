@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { db, Task, WeekDay } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import CategorySelect from "@/components/categories/CategorySelect";
@@ -10,8 +10,9 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { Button, IconButton } from "@mui/material";
 import ScheduleSelect from "@/components/tasks/ScheduleSelect";
 import WeekDayTabs from "@/components/tasks/WeekDayTabs";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import TimeSelect from "@/components/tasks/TimeSelect";
+import { useSettingsStore } from "@/store/settingsStore";
+
 
 export default function Home() {
   const today = new Date().getDay();
@@ -24,6 +25,18 @@ export default function Home() {
   const [scheduledTimes, setScheduledTimes] = useState<string[]>([]);
   const tasks =
     useLiveQuery(() => db.tasks.orderBy("order").toArray(), []) || [];
+
+  const {
+  showWeekDayTabs,
+  weekDayOrientation,
+  showTaskProgress,
+  showTaskTimes,
+  initialize,
+} = useSettingsStore();
+
+useEffect(() => {
+  initialize();
+}, [initialize]);
 
   const visibleTasks =
     selectedDay === "all"
@@ -157,7 +170,8 @@ export default function Home() {
       <div className="mx-auto flex h-full max-w-xl flex-col">
         {/* Add Task */}
 
-        <section className="mb-4 shrink-0 rounded-xl bg-white p-3 text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400">
+        <section className="mb-1 shrink-0 rounded-xl bg-white p-3 text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400">
+         
           <div className="flex flex-col gap-2">
             <input
               value={task}
@@ -231,29 +245,47 @@ export default function Home() {
         </section>
 
         {/* Progress */}
+        {showTaskProgress && (
+          <div className="shrink-0">
+            <TaskProgress
+              completed={visibleTasks.filter((item) => item.completed).length}
+              total={visibleTasks.length}
+            />
+          </div>
+        )}
 
-        <div className="shrink-0">
-          <TaskProgress
-            completed={visibleTasks.filter((item) => item.completed).length}
-            total={visibleTasks.length}
+      {/* Tasks + Week Days */}
+
+      <div
+        className={
+          weekDayOrientation === "horizontal"
+            ? "flex min-h-0 flex-1 flex-col gap-2"
+            : "flex min-h-0 flex-1 flex-row-reverse gap-2"
+        }
+      >
+        {/* Week Days */}
+
+        {showWeekDayTabs && (
+          <WeekDayTabs
+            value={selectedDay}
+            onChange={setSelectedDay}
+            orientation={weekDayOrientation}
           />
-        </div>
+        )}
 
         {/* Tasks */}
 
-        <div className="flex min-h-0 flex-1 gap-2">
-          <div className="tasks-scroll min-h-0 flex-1 overflow-y-auto pb-4">
-            <SortableTaskList
-              tasks={visibleTasks}
-              categories={categories}
-              onToggle={toggleTask}
-              onDelete={deleteTask}
-              onReorder={reorderTasks}
-            />
-          </div>
-
-          <WeekDayTabs value={selectedDay} onChange={setSelectedDay} />
+        <div className="tasks-scroll min-h-0 flex-1 overflow-y-auto pb-4">
+          <SortableTaskList
+            tasks={visibleTasks}
+            categories={categories}
+            onToggle={toggleTask}
+            onDelete={deleteTask}
+            onReorder={reorderTasks}
+            showTaskTimes={showTaskTimes}
+          />
         </div>
+      </div>
       </div>
     </main>
   );

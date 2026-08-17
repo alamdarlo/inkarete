@@ -100,6 +100,18 @@ export type HistoryItem = {
   createdAt: number;
 };
 
+export type AppSettings = {
+  id: "app";
+
+  showWeekDayTabs: boolean;
+
+  weekDayOrientation: "horizontal" | "vertical";
+
+  showTaskProgress: boolean;
+
+  showTaskTimes: boolean;
+};
+
 // -----------------------------
 // Database
 // -----------------------------
@@ -110,17 +122,16 @@ export class AppDatabase extends Dexie {
   history!: Table<HistoryItem, number>;
 
   categories!: Table<CategoryItem, number>;
-
+settings!: Table<AppSettings, string>;
 constructor() {
   super("taskDatabase");
 
-  this.version(1).stores({
-    tasks: "++id, completed, categoryId, order, createdAt",
-
-    history: "++id, action, createdAt, taskId",
-
-    categories: "++id, name, createdAt",
-  });
+  this.version(3).stores({
+  tasks: "++id, completed, priority, createdAt, order",
+  history: "++id, action, createdAt, taskId",
+  categories: "++id, name, createdAt",
+  settings: "id",
+});
 
   this.on("populate", async () => {
     await this.categories.bulkAdd([

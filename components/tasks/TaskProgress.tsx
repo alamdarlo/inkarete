@@ -15,22 +15,22 @@ export default function TaskProgress({
       : 0;
 
   return (
-    <section className="mb-4 rounded-xl bg-white p-3 shadow-sm dark:bg-slate-800">
-      <div className="mb-2 flex justify-between text-sm text-slate-600 dark:text-slate-300">
-        <span>پیشرفت امروز</span>
-
-        <span>
-          {completed} / {total}
-        </span>
-      </div>
-
-      <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+    <section className="mb-1 rounded-lg bg-white px-3 py-1.5 shadow-sm dark:bg-slate-800">
+      <div className="relative h-3.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+        {/* Progress */}
         <div
-          className="h-full rounded-full bg-emerald-500 transition-all"
+          className="absolute inset-y-0 right-0 rounded-full bg-emerald-500 transition-all duration-300"
           style={{
             width: `${progress}%`,
           }}
         />
+
+        {/* Counter */}
+        <div className="relative z-10 flex h-full items-center justify-center">
+          <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-100">
+            {completed} / {total}
+          </span>
+        </div>
       </div>
     </section>
   );

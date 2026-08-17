@@ -1,13 +1,14 @@
 "use client";
 
 import { WeekDay } from "@/lib/db";
-import { Box, Tab, Tabs } from "@mui/material";
 
 type SelectedDay = WeekDay | "all";
 
 type Props = {
   value: SelectedDay;
   onChange: (value: SelectedDay) => void;
+
+  orientation?: "horizontal" | "vertical";
 };
 
 const days: {
@@ -33,125 +34,167 @@ const getTodayIndex = (): WeekDay => {
 export default function WeekDayTabs({
   value,
   onChange,
+  orientation = "horizontal",
 }: Props) {
   const today = getTodayIndex();
 
+  const isVertical = orientation === "vertical";
+
   return (
-    <Box
-      sx={{
-    width: { xs: 44, sm: 52 },
-    flexShrink: 0,
-    borderRadius: 2,
-    backgroundColor: "rgb(248 250 252)",
-    border: "1px solid rgb(226 232 240)",
+    <div
+      dir="rtl"
+      className={`
+        shrink-0 overflow-hidden rounded-xl
+        border border-slate-200
+        bg-white
+        shadow-sm
+        dark:border-slate-700
+        dark:bg-slate-800
 
-    "@media (prefers-color-scheme: dark)": {
-      backgroundColor: "rgb(30 41 59)",
-      borderColor: "rgb(51 65 85)",
-    },
-  }}
-    >
-      <Tabs
-        orientation="vertical"
-        value={value}
-        onChange={(_, newValue) =>
-          onChange(newValue as SelectedDay)
+        ${
+          isVertical
+            ? "flex h-full w-10 flex-col"
+            : "w-full"
         }
-        variant="scrollable"
-        scrollButtons={false}
-        sx={{
-          minHeight: "auto",
-
-          "& .MuiTabs-indicator": {
-            right: 0,
-            left: "auto",
-            width: 3,
-            borderRadius: "3px 0 0 3px",
-            backgroundColor: "rgb(79 70 229)",
-          },
-
-          "& .MuiTab-root": {
-            minWidth: 0,
-            width: "100%",
-            minHeight: 44,
-            padding: 0,
-            fontSize: { xs: 12, sm: 13 },
-            fontWeight: 500,
-            color: "rgb(100 116 139)",
-            transition: "all 0.2s ease",
-
-            "@media (prefers-color-scheme: dark)": {
-              color: "rgb(236 238 241);",
-            },
-
-            "&:hover": {
-              color: "rgb(51 65 85)",
-              backgroundColor: "rgb(248 250 252)",
-
-              "@media (prefers-color-scheme: dark)": {
-                color: "rgb(226 232 240)",
-                backgroundColor: "rgb(51 65 85)",
-              },
-            },
-
-            "&.Mui-selected": {
-              color: "rgb(79 70 229)",
-              fontWeight: 700,
-
-              "@media (prefers-color-scheme: dark)": {
-                color: "rgb(129 140 248)",
-              },
-            },
-          },
-        }}
+      `}
+    >
+      <div
+        className={`
+          flex
+          ${
+            isVertical
+              ? "h-full flex-col"
+              : "w-full flex-row"
+          }
+        `}
       >
-        <Tab value="all" label="همه" />
-
-        {days.map((day) => (
-          <Tab
-            key={day.value}
-            value={day.value}
-            label={
-              <>
-                <Box
-                  component="span"
-                  sx={{
-                    display: { xs: "inline", sm: "none" },
-                  }}
-                >
-                  {day.shortLabel}
-                </Box>
-
-                <Box
-                  component="span"
-                  sx={{
-                    display: { xs: "none", sm: "inline" },
-                  }}
-                >
-                  {day.label}
-                </Box>
-              </>
+        {/* همه */}
+        <button
+          type="button"
+          onClick={() => onChange("all")}
+          className={`
+            relative flex items-center justify-center
+            text-xs font-medium
+            transition-colors
+            ${
+              isVertical
+                ? "min-h-0 flex-1 px-0"
+                : "min-w-0 flex-1 px-2 py-2"
             }
-            sx={{
-              position: "relative",
 
-              "&::after":
-                day.value === today
-                  ? {
-                      content: '""',
-                      position: "absolute",
-                      top: 7,
-                      left: 7,
-                      width: 5,
-                      height: 5,
-                      borderRadius: "50%",
-                      backgroundColor: "rgb(16 185 129)",
-                    }
-                  : undefined,
-            }}
-          />
-        ))}
-      </Tabs>
-    </Box>
+            ${
+              value === "all"
+                ? "text-indigo-600 dark:text-indigo-400"
+                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/60 dark:hover:text-slate-100"
+            }
+
+            ${
+              isVertical
+                ? value === "all"
+                  ? "border-r-2 border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40"
+                  : ""
+                : value === "all"
+                  ? "border-b-2 border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40"
+                  : ""
+            }
+          `}
+        >
+          <span
+            className={
+              isVertical
+                ? "[writing-mode:vertical-rl] rotate-180"
+                : ""
+            }
+          >
+            همه
+          </span>
+        </button>
+
+        {days.map((day) => {
+          const selected = value === day.value;
+          const isToday = day.value === today;
+
+          return (
+            <button
+              key={day.value}
+              type="button"
+              onClick={() => onChange(day.value)}
+              className={`
+                relative flex items-center justify-center
+                text-xs font-medium
+                transition-colors
+                ${
+                  isVertical
+                    ? "min-h-0 flex-1 px-0"
+                    : "min-w-0 flex-1 px-1 py-2"
+                }
+
+                ${
+                  selected
+                    ? "text-indigo-600 dark:text-indigo-400"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/60 dark:hover:text-slate-100"
+                }
+
+                ${
+                  isVertical
+                    ? selected
+                      ? "border-r-2 border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40"
+                      : ""
+                    : selected
+                      ? "border-b-2 border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40"
+                      : ""
+                }
+              `}
+            >
+              {/* نشانگر امروز */}
+              {isToday && (
+                <span
+                  className="
+                    absolute
+                    h-1.5
+                    w-1.5
+                    rounded-full
+                    bg-emerald-500
+                    dark:bg-emerald-400
+                  "
+                  style={
+                    isVertical
+                      ? {
+                          top: "6px",
+                          right: "4px",
+                        }
+                      : {
+                          top: "4px",
+                          right: "6px",
+                        }
+                  }
+                />
+              )}
+
+              <span
+                className={`
+                  ${
+                    isVertical
+                      ? "[writing-mode:vertical-rl] rotate-180"
+                      : ""
+                  }
+                `}
+              >
+                {/* دسکتاپ افقی: نام کامل */}
+                <span className="hidden sm:inline">
+                  {day.label}
+                </span>
+
+                {/* موبایل افقی: مخفف */}
+                <span className="sm:hidden">
+                  {/* {day.shortLabel} */}
+                  {day.label}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

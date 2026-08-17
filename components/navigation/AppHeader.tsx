@@ -2,7 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import AppMenu from "@/components/navigation/AppMenu";
-
+import SettingsIcon from "@mui/icons-material/Settings";
+import Link from "next/link";
 import {
   AssignmentOutlined,
   CategoryOutlined,
@@ -42,6 +43,30 @@ export default function AppHeader() {
 
       <div className="shrink-0">
         <AppMenu />
+              <div className="mt-2 flex items-center justify-end">
+                <Link
+                  href="/settings"
+                  aria-label="تنظیمات"
+                  title="تنظیمات"
+                  className="
+                    flex
+                    h-9
+                    w-9
+                    items-center
+                    justify-center
+                    rounded-lg
+                    text-slate-500
+                    transition
+                    hover:bg-white
+                    hover:text-slate-700
+                    dark:text-slate-400
+                    dark:hover:bg-slate-800
+                    dark:hover:text-slate-200
+                  "
+                >
+                  <SettingsIcon fontSize="small" />
+                </Link>
+              </div>
       </div>
 
       {/* Title - Left */}
