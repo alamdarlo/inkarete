@@ -110,6 +110,10 @@ export type AppSettings = {
   showTaskProgress: boolean;
 
   showTaskTimes: boolean;
+
+  notificationsEnabled: boolean;
+
+  notificationMinutesBefore: number;
 };
 
 // -----------------------------

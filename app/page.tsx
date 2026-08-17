@@ -12,7 +12,7 @@ import ScheduleSelect from "@/components/tasks/ScheduleSelect";
 import WeekDayTabs from "@/components/tasks/WeekDayTabs";
 import TimeSelect from "@/components/tasks/TimeSelect";
 import { useSettingsStore } from "@/store/settingsStore";
-
+import NotificationScheduler from "@/components/notifications/NotificationScheduler";
 
 export default function Home() {
   const today = new Date().getDay();
@@ -31,8 +31,11 @@ export default function Home() {
   weekDayOrientation,
   showTaskProgress,
   showTaskTimes,
-  initialize,
 } = useSettingsStore();
+
+const initialize = useSettingsStore(
+  (state) => state.initialize,
+);
 
 useEffect(() => {
   initialize();
@@ -162,11 +165,13 @@ useEffect(() => {
     });
   };
 
+  
   return (
     <main
       dir="rtl"
       className="h-[calc(100vh-100px)] overflow-hidden bg-slate-100 px-3 text-slate-800 dark:bg-slate-900 dark:text-slate-100 sm:px-5"
     >
+      <NotificationScheduler />
       <div className="mx-auto flex h-full max-w-xl flex-col">
         {/* Add Task */}
 

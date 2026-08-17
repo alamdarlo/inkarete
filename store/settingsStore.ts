@@ -15,6 +15,17 @@ type SettingsState = AppSettings & {
   setShowTaskProgress: (value: boolean) => Promise<void>;
 
   setShowTaskTimes: (value: boolean) => Promise<void>;
+  notificationsEnabled: boolean;
+
+notificationMinutesBefore: number;
+
+setNotificationsEnabled: (
+  value: boolean,
+) => Promise<void>;
+
+setNotificationMinutesBefore: (
+  value: number,
+) => Promise<void>;
 };
 
 const defaultSettings: AppSettings = {
@@ -27,6 +38,10 @@ const defaultSettings: AppSettings = {
   showTaskProgress: true,
 
   showTaskTimes: true,
+
+  notificationsEnabled: false,
+
+  notificationMinutesBefore: 0,
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -93,4 +108,23 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       showTaskTimes: value,
     });
   },
+  setNotificationsEnabled: async (value) => {
+  await db.settings.update("app", {
+    notificationsEnabled: value,
+  });
+
+  set({
+    notificationsEnabled: value,
+  });
+},
+
+setNotificationMinutesBefore: async (value) => {
+  await db.settings.update("app", {
+    notificationMinutesBefore: value,
+  });
+
+  set({
+    notificationMinutesBefore: value,
+  });
+},
 }));
