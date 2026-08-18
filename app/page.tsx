@@ -37,11 +37,7 @@ const initialize = useSettingsStore(
   (state) => state.initialize,
 );
 
-useEffect(() => {
-  initialize();
-}, [initialize]);
-
-  const visibleTasks =
+const visibleTasks =
     selectedDay === "all"
       ? tasks
       : tasks.filter((item) => item.scheduledDays.includes(selectedDay));
@@ -51,14 +47,18 @@ useEffect(() => {
 
   const completed = tasks.filter((item) => item.completed).length;
 
-  // -----------------------------
-  // Set Default Category
-  // -----------------------------
 
+useEffect(() => {
+  initialize();
+}, [initialize]);
+
+useEffect(() => {
   if (categoryId === 0 && categories.length > 0) {
     setCategoryId(categories[0].id!);
   }
+}, [categoryId, categories.length]);
 
+  
   // -----------------------------
   // Add Task
   // -----------------------------

@@ -4,6 +4,7 @@ import type {
   ScheduledNotification,
   SwMessage,
 } from "../lib/notificationTypes";
+
 import {
   getNotificationBody,
   getNotificationKey,
@@ -17,6 +18,7 @@ const DEFAULT_ICON = "/icons/icon-192.png";
 let schedule: ScheduledNotification[] = [];
 let schedulerEnabled = false;
 let checkInterval: ReturnType<typeof setInterval> | null = null;
+
 const notifiedKeys = new Set<string>();
 
 function getIconUrl(): string {
@@ -35,8 +37,7 @@ async function displayNotification(
     dir: "rtl",
     lang: "fa",
     tag: tag ?? `inkarete-${Date.now()}`,
-    //vibrate: [200, 100, 200],
-    silent:false,
+    silent: false,
     data: {
       url: "/",
     },
@@ -44,10 +45,12 @@ async function displayNotification(
 }
 
 function stopBackgroundChecks(): void {
-  if (checkInterval) {
-    clearInterval(checkInterval);
-    checkInterval = null;
+  if (!checkInterval) {
+    return;
   }
+
+  clearInterval(checkInterval);
+  checkInterval = null;
 }
 
 function startBackgroundChecks(): void {
@@ -57,7 +60,10 @@ function startBackgroundChecks(): void {
 
   checkDueNotifications();
 
-  checkInterval = setInterval(checkDueNotifications, 15000);
+  checkInterval = setInterval(
+    checkDueNotifications,
+    15000,
+  );
 }
 
 function checkDueNotifications(): void {
@@ -72,7 +78,11 @@ function checkDueNotifications(): void {
       continue;
     }
 
-    const key = getNotificationKey(item.taskId, item.date, item.time);
+    const key = getNotificationKey(
+      item.taskId,
+      item.date,
+      item.time,
+    );
 
     if (notifiedKeys.has(key)) {
       continue;
@@ -88,71 +98,83 @@ function checkDueNotifications(): void {
   }
 }
 
-self.addEventListener("message", (event: ExtendableMessageEvent) => {
-  const data = event.data as SwMessage | undefined;
+self.addEventListener(
+  "message",
+  (event: ExtendableMessageEvent) => {
+    const data = event.data as SwMessage | undefined;
 
-  if (!data?.type) {
-    return;
-  }
+    if (!data?.type) {
+      return;
+    }
 
-  switch (data.type) {
-    case "SHOW_NOTIFICATION":
-      event.waitUntil(
-        displayNotification(data.title, data.body, data.tag),
-      );
-      break;
+    switch (data.type) {
+      case "SHOW_NOTIFICATION":
+        event.waitUntil(
+          displayNotification(
+            data.title,
+            data.body,
+            data.tag,
+          ),
+        );
+        break;
 
-    case "UPDATE_SCHEDULE":
-      schedule = data.schedule;
-      schedulerEnabled = data.enabled;
+      case "UPDATE_SCHEDULE":
+        schedule = data.schedule;
+        schedulerEnabled = data.enabled;
 
-      if (schedulerEnabled) {
+        if (schedulerEnabled && schedule.length) {
+          startBackgroundChecks();
+        } else {
+          stopBackgroundChecks();
+        }
+
+        break;
+
+      case "START_SCHEDULER":
+        schedulerEnabled = true;
         startBackgroundChecks();
-      } else {
+        break;
+
+      case "STOP_SCHEDULER":
+        schedulerEnabled = false;
         stopBackgroundChecks();
-      }
-      break;
+        break;
 
-    case "START_SCHEDULER":
-      schedulerEnabled = true;
-      startBackgroundChecks();
-      break;
+      default:
+        break;
+    }
+  },
+);
 
-    case "STOP_SCHEDULER":
-      schedulerEnabled = false;
-      stopBackgroundChecks();
-      break;
+self.addEventListener(
+  "notificationclick",
+  (event) => {
+    event.notification.close();
 
-    default:
-      break;
-  }
-});
+    const targetUrl =
+      (event.notification.data?.url as string | undefined) ??
+      "/";
 
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-
-  const targetUrl =
-    (event.notification.data?.url as string | undefined) ?? "/";
-
-  event.waitUntil(
-    self.clients
-      .matchAll({
-        type: "window",
-        includeUncontrolled: true,
-      })
-      .then((clientList) => {
-        for (const client of clientList) {
-          if ("focus" in client) {
-            void client.focus();
-            return;
+    event.waitUntil(
+      self.clients
+        .matchAll({
+          type: "window",
+          includeUncontrolled: true,
+        })
+        .then((clientList) => {
+          for (const client of clientList) {
+            if ("focus" in client) {
+              void client.focus();
+              return;
+            }
           }
-        }
 
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(targetUrl);
-        }
-      }),
-  );
-});
+          if (self.clients.openWindow) {
+            return self.clients.openWindow(targetUrl);
+          }
+        }),
+    );
+  },
+);
 
 export {};

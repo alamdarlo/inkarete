@@ -1,1 +1,1 @@
-export const APP_ROUTES = ["/", "/categories", "/history"];
+export const APP_ROUTES = ["/", "/categories", "/history","/settings"];
