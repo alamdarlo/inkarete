@@ -25,21 +25,17 @@ export default function Home() {
   const [scheduledTimes, setScheduledTimes] = useState<string[]>([]);
   const tasks =
     useLiveQuery(() => db.tasks.orderBy("order").toArray(), []) || [];
-useEffect(() => {
-  alert(`Home Tasks: ${tasks.length}`);
-}, [tasks.length]);
+
   const {
-  showWeekDayTabs,
-  weekDayOrientation,
-  showTaskProgress,
-  showTaskTimes,
-} = useSettingsStore();
+    showWeekDayTabs,
+    weekDayOrientation,
+    showTaskProgress,
+    showTaskTimes,
+  } = useSettingsStore();
 
-const initialize = useSettingsStore(
-  (state) => state.initialize,
-);
+  const initialize = useSettingsStore((state) => state.initialize);
 
-const visibleTasks =
+  const visibleTasks =
     selectedDay === "all"
       ? tasks
       : tasks.filter((item) => item.scheduledDays.includes(selectedDay));
@@ -49,18 +45,16 @@ const visibleTasks =
 
   const completed = tasks.filter((item) => item.completed).length;
 
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
-useEffect(() => {
-  initialize();
-}, [initialize]);
+  useEffect(() => {
+    if (categoryId === 0 && categories.length > 0) {
+      setCategoryId(categories[0].id!);
+    }
+  }, [categoryId, categories.length]);
 
-useEffect(() => {
-  if (categoryId === 0 && categories.length > 0) {
-    setCategoryId(categories[0].id!);
-  }
-}, [categoryId, categories.length]);
-
-  
   // -----------------------------
   // Add Task
   // -----------------------------
@@ -167,7 +161,6 @@ useEffect(() => {
     });
   };
 
-  
   return (
     <main
       dir="rtl"
@@ -178,7 +171,6 @@ useEffect(() => {
         {/* Add Task */}
 
         <section className="mb-1 shrink-0 rounded-xl bg-white p-3 text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400">
-         
           <div className="flex flex-col gap-2">
             <input
               value={task}
@@ -189,8 +181,6 @@ useEffect(() => {
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="flex flex-1 items-center gap-1">
-                
-
                 <ScheduleSelect
                   value={scheduledDays}
                   onChange={setScheduledDays}
@@ -261,38 +251,38 @@ useEffect(() => {
           </div>
         )}
 
-      {/* Tasks + Week Days */}
+        {/* Tasks + Week Days */}
 
-      <div
-        className={
-          weekDayOrientation === "horizontal"
-            ? "flex min-h-0 flex-1 flex-col gap-2"
-            : "flex min-h-0 flex-1 flex-row-reverse gap-2"
-        }
-      >
-        {/* Week Days */}
+        <div
+          className={
+            weekDayOrientation === "horizontal"
+              ? "flex min-h-0 flex-1 flex-col gap-2"
+              : "flex min-h-0 flex-1 flex-row-reverse gap-2"
+          }
+        >
+          {/* Week Days */}
 
-        {showWeekDayTabs && (
-          <WeekDayTabs
-            value={selectedDay}
-            onChange={setSelectedDay}
-            orientation={weekDayOrientation}
-          />
-        )}
+          {showWeekDayTabs && (
+            <WeekDayTabs
+              value={selectedDay}
+              onChange={setSelectedDay}
+              orientation={weekDayOrientation}
+            />
+          )}
 
-        {/* Tasks */}
+          {/* Tasks */}
 
-        <div className="tasks-scroll min-h-0 flex-1 overflow-y-auto pb-4">
-          <SortableTaskList
-            tasks={visibleTasks}
-            categories={categories}
-            onToggle={toggleTask}
-            onDelete={deleteTask}
-            onReorder={reorderTasks}
-            showTaskTimes={showTaskTimes}
-          />
+          <div className="tasks-scroll min-h-0 flex-1 overflow-y-auto pb-4">
+            <SortableTaskList
+              tasks={visibleTasks}
+              categories={categories}
+              onToggle={toggleTask}
+              onDelete={deleteTask}
+              onReorder={reorderTasks}
+              showTaskTimes={showTaskTimes}
+            />
+          </div>
         </div>
-      </div>
       </div>
     </main>
   );

@@ -13,7 +13,9 @@ function getTodayIndex(): WeekDay {
   return day === 6 ? 0 : ((day + 1) as WeekDay);
 }
 
-function getTodayKey(date = new Date()): string {
+function getTodayKey(): string {
+  const date = new Date();
+
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -29,8 +31,7 @@ function getNotificationKey(
   return `${taskId}-${date}-${time}`;
 }
 
-
-function getDueTime(
+function isTaskDue(
   task: Task,
   notificationMinutesBefore: number,
 ) {
@@ -67,11 +68,18 @@ function getDueTime(
     const notificationMinutes =
       taskMinutes - notificationMinutesBefore;
 
+    /*
+     * اگر زمان اعلان رسیده یا گذشته باشد،
+     * آن را موعددار در نظر می‌گیریم.
+     *
+     * جلوگیری از ارسال دوباره توسط notifiedTasks انجام می‌شود.
+     */
     if (
       currentMinutes >= notificationMinutes
     ) {
       return {
         time,
+        notificationMinutes,
       };
     }
   }
@@ -79,77 +87,81 @@ function getDueTime(
   return null;
 }
 
-
 async function checkNotifications() {
-  try {
-    const settings = await db.settings.get("app");
+  const settings = await db.settings.get("app");
 
-    if (!settings) {
-      alert("❌ Settings پیدا نشد");
-      return;
+  if (!settings) {
+    return;
+  }
+
+  if (!settings.notificationsEnabled) {
+    return;
+  }
+
+  const tasks = await db.tasks
+    .orderBy("order")
+    .toArray();
+
+  /*
+   * Alert موقت برای تست موبایل
+   */
+  alert(`1️⃣ Scheduler اجرا شد\nتعداد تسک‌ها: ${tasks.length}`);
+
+  const todayKey = getTodayKey();
+
+  for (const task of tasks) {
+    const due = isTaskDue(
+      task,
+      settings.notificationMinutesBefore,
+    );
+
+    /*
+     * Alert موقت برای بررسی هر Task
+     */
+    alert(
+      `2️⃣ بررسی Task\n${task.title}\n` +
+      `زمان‌ها: ${task.scheduledTimes?.join(", ") || "ندارد"}\n` +
+      `زمان فعلی: ${new Date().toLocaleTimeString("fa-IR")}\n` +
+      `زمان اعلان قبل از موعد: ${settings.notificationMinutesBefore}\n` +
+      `موعد پیدا شد: ${due ? "بله" : "خیر"}`,
+    );
+
+    if (!due || !task.id) {
+      continue;
     }
 
-    if (!settings.notificationsEnabled) {
-      alert("❌ اعلان‌ها خاموش هستند");
-      return;
+    const key = getNotificationKey(
+      task.id,
+      todayKey,
+      due.time,
+    );
+
+    if (notifiedTasks.has(key)) {
+      continue;
     }
 
-    if (Notification.permission !== "granted") {
-      alert(`❌ Permission: ${Notification.permission}`);
-      return;
-    }
+    notifiedTasks.add(key);
 
-    const tasks = await db.tasks.orderBy("order").toArray();
+    const message =
+      settings.notificationMinutesBefore > 0
+        ? `${settings.notificationMinutesBefore} دقیقه تا زمان انجام کار باقی مانده`
+        : "زمان انجام این کار رسیده است";
 
-    alert(`📋 تعداد Taskها: ${tasks.length}`);
+    /*
+     * Alert نهایی؛ یعنی دقیقاً قبل از ارسال Notification
+     */
+    alert(
+      `3️⃣ ارسال اعلان\n` +
+      `Task: ${task.title}\n` +
+      `زمان Task: ${due.time}\n` +
+      `پیام: ${message}`,
+    );
 
-    const todayKey = getTodayKey();
-
-    for (const task of tasks) {
-      const due = getDueTime(
-        task,
-        settings.notificationMinutesBefore,
-      );
-
-      if (!due || !task.id) {
-        continue;
-      }
-
-      alert(
-        `✅ Task موعد دارد\n\n${task.title}\nزمان: ${due.time}`,
-      );
-
-      const key = getNotificationKey(
-        task.id,
-        todayKey,
-        due.time,
-      );
-
-      if (notifiedTasks.has(key)) {
-        continue;
-      }
-
-      notifiedTasks.add(key);
-
-      const message =
-        settings.notificationMinutesBefore > 0
-          ? `${settings.notificationMinutesBefore} دقیقه تا زمان انجام کار باقی مانده`
-          : "زمان انجام این کار رسیده است";
-
-      alert(
-        `🔔 ارسال اعلان\n\n${task.title}\n${message}`,
-      );
-
-      await showTaskNotification(
-        task.title,
-        message,
-        key,
-      );
-
-      alert("✅ showTaskNotification اجرا شد");
-    }
-  } catch (error) {
-    alert(`❌ ERROR:\n${String(error)}`);
+    await showTaskNotification(
+      task.title,
+      message,
+      key,
+    );
   }
 }
 
@@ -162,26 +174,17 @@ export function startNotificationScheduler() {
     return;
   }
 
-  alert("Scheduler شروع شد");
-
-  void checkNotifications();
+  checkNotifications();
 
   schedulerInterval = setInterval(
-    () => {
-      void checkNotifications();
-    },
-    5000,
+    checkNotifications,
+    30000,
   );
 }
 
 export function stopNotificationScheduler() {
   if (schedulerInterval) {
     clearInterval(schedulerInterval);
-
     schedulerInterval = null;
-
-    console.log(
-      "[NotificationScheduler] Stopped",
-    );
   }
 }
