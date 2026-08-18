@@ -25,7 +25,9 @@ export default function Home() {
   const [scheduledTimes, setScheduledTimes] = useState<string[]>([]);
   const tasks =
     useLiveQuery(() => db.tasks.orderBy("order").toArray(), []) || [];
-
+useEffect(() => {
+  alert(`Home Tasks: ${tasks.length}`);
+}, [tasks.length]);
   const {
   showWeekDayTabs,
   weekDayOrientation,
