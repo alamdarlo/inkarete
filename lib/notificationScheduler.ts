@@ -29,6 +29,7 @@ function getNotificationKey(
   return `${taskId}-${date}-${time}`;
 }
 
+
 function getDueTime(
   task: Task,
   notificationMinutesBefore: number,
@@ -47,38 +48,27 @@ function getDueTime(
 
   const now = new Date();
 
+  const currentMinutes =
+    now.getHours() * 60 + now.getMinutes();
+
   for (const time of task.scheduledTimes) {
     const [hours, minutes] = time.split(":").map(Number);
 
-    if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    if (
+      Number.isNaN(hours) ||
+      Number.isNaN(minutes)
+    ) {
       continue;
     }
 
-    const target = new Date(now);
+    const taskMinutes =
+      hours * 60 + minutes;
 
-    target.setHours(
-      hours,
-      minutes,
-      0,
-      0,
-    );
+    const notificationMinutes =
+      taskMinutes - notificationMinutesBefore;
 
-    target.setMinutes(
-      target.getMinutes() - notificationMinutesBefore,
-    );
-
-    const difference = now.getTime() - target.getTime();
-
-    /*
-     * اعلان در بازه 0 تا 60 ثانیه بعد از زمان تعیین‌شده
-     * ارسال می‌شود.
-     *
-     * این کار باعث می‌شود اگر Scheduler دقیقاً در
-     * ابتدای دقیقه اجرا نشد، اعلان از دست نرود.
-     */
     if (
-      difference >= 0 &&
-      difference < 60 * 1000
+      currentMinutes >= notificationMinutes
     ) {
       return {
         time,
@@ -92,75 +82,42 @@ function getDueTime(
 
 async function checkNotifications() {
   try {
-    alert("1️⃣ checkNotifications اجرا شد");
-
     const settings = await db.settings.get("app");
 
-    alert(
-      settings
-        ? `2️⃣ Settings پیدا شد\nnotificationsEnabled: ${settings.notificationsEnabled}\nminutesBefore: ${settings.notificationMinutesBefore}`
-        : "2️⃣ ❌ Settings پیدا نشد",
-    );
-
     if (!settings) {
+      alert("❌ Settings پیدا نشد");
       return;
     }
 
     if (!settings.notificationsEnabled) {
-      alert("3️⃣ ❌ notificationsEnabled = false");
+      alert("❌ اعلان‌ها خاموش هستند");
       return;
     }
-
-    alert("3️⃣ ✅ اعلان‌ها فعال هستند");
 
     if (Notification.permission !== "granted") {
-      alert(
-        `4️⃣ ❌ Permission مشکل دارد\nPermission: ${Notification.permission}`,
-      );
+      alert(`❌ Permission: ${Notification.permission}`);
       return;
     }
 
-    alert("4️⃣ ✅ Notification permission = granted");
+    const tasks = await db.tasks.orderBy("order").toArray();
 
-    const tasks = await db.tasks
-      .orderBy("order")
-      .toArray();
-
-    alert(
-      `5️⃣ تعداد Taskها: ${tasks.length}`,
-    );
-
-    const today = getTodayIndex();
-
-    alert(
-      `6️⃣ امروز index = ${today}`,
-    );
+    alert(`📋 تعداد Taskها: ${tasks.length}`);
 
     const todayKey = getTodayKey();
 
-    alert(
-      `7️⃣ todayKey = ${todayKey}`,
-    );
-
     for (const task of tasks) {
-      alert(
-        `8️⃣ بررسی Task:\n${task.title}\nID: ${task.id}\ncompleted: ${task.completed}\nscheduledDays: ${JSON.stringify(task.scheduledDays)}\nscheduledTimes: ${JSON.stringify(task.scheduledTimes)}`,
-      );
-
       const due = getDueTime(
         task,
         settings.notificationMinutesBefore,
       );
 
-      alert(
-        due
-          ? `9️⃣ ✅ Task موعد دارد\nزمان: ${due.time}`
-          : "9️⃣ ❌ این Task فعلاً موعد اعلان ندارد",
-      );
-
       if (!due || !task.id) {
         continue;
       }
+
+      alert(
+        `✅ Task موعد دارد\n\n${task.title}\nزمان: ${due.time}`,
+      );
 
       const key = getNotificationKey(
         task.id,
@@ -168,12 +125,7 @@ async function checkNotifications() {
         due.time,
       );
 
-      alert(
-        `🔟 Notification Key:\n${key}`,
-      );
-
       if (notifiedTasks.has(key)) {
-        alert("1️⃣1️⃣ این اعلان قبلاً ارسال شده");
         continue;
       }
 
@@ -185,7 +137,7 @@ async function checkNotifications() {
           : "زمان انجام این کار رسیده است";
 
       alert(
-        `1️⃣2️⃣ قرار است اعلان ارسال شود\n\nعنوان: ${task.title}\nپیام: ${message}`,
+        `🔔 ارسال اعلان\n\n${task.title}\n${message}`,
       );
 
       await showTaskNotification(
@@ -194,14 +146,10 @@ async function checkNotifications() {
         key,
       );
 
-      alert("1️⃣3️⃣ showTaskNotification اجرا شد");
+      alert("✅ showTaskNotification اجرا شد");
     }
-
-    alert("1️⃣4️⃣ checkNotifications تمام شد");
   } catch (error) {
-    alert(
-      `❌ ERROR در Scheduler:\n${String(error)}`,
-    );
+    alert(`❌ ERROR:\n${String(error)}`);
   }
 }
 
