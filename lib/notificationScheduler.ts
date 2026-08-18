@@ -157,7 +157,6 @@ async function checkNotifications() {
     );
   }
 }
-
 export function startNotificationScheduler() {
   if (typeof window === "undefined") {
     return;
@@ -167,9 +166,7 @@ export function startNotificationScheduler() {
     return;
   }
 
-  console.log(
-    "[NotificationScheduler] Started",
-  );
+  alert("Scheduler شروع شد");
 
   void checkNotifications();
 
