@@ -136,7 +136,7 @@ export function startNotificationScheduler() {
 
   schedulerInterval = setInterval(
     checkNotifications,
-    30_000,
+    30000,
   );
 }
 
