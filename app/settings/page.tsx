@@ -9,7 +9,10 @@ import {
   ViewSidebar,
 } from "@mui/icons-material";
 import {
-  FormControlLabel,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   Switch,
 } from "@mui/material";
 
@@ -24,20 +27,20 @@ import {
 
 export default function SettingsPage() {
   const {
-    showWeekDayTabs,
-    weekDayOrientation,
-    showTaskProgress,
-    showTaskTimes,
-
-    initialize,
-
-    setShowWeekDayTabs,
-    setWeekDayOrientation,
-    setShowTaskProgress,
-    setShowTaskTimes,
-     notificationsEnabled,
+  showWeekDayTabs,
+  weekDayOrientation,
+  showTaskProgress,
+  showTaskTimes,
+  initialize,
+  setShowWeekDayTabs,
+  setWeekDayOrientation,
+  setShowTaskProgress,
+  setShowTaskTimes,
+  notificationsEnabled,
   setNotificationsEnabled,
-  } = useSettingsStore();
+  notificationMinutesBefore,
+  setNotificationMinutesBefore,
+} = useSettingsStore();
 
   useEffect(() => {
     initialize();
@@ -430,6 +433,60 @@ export default function SettingsPage() {
 
 
   </div>
+  {notificationsEnabled && (
+  <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-700">
+    <div className="mb-2">
+      <div className="text-sm font-bold">
+        زمان یادآوری
+      </div>
+
+      <div className="mt-1 text-xs text-slate-400">
+        مشخص کنید چند دقیقه قبل از زمان انجام کار اعلان نمایش داده شود.
+      </div>
+    </div>
+
+    <FormControl fullWidth size="small">
+      <InputLabel id="notification-minutes-label">
+        زمان یادآوری
+      </InputLabel>
+
+      <Select
+        labelId="notification-minutes-label"
+        value={notificationMinutesBefore}
+        label="زمان یادآوری"
+        onChange={(event) =>
+          setNotificationMinutesBefore(
+            Number(event.target.value),
+          )
+        }
+      >
+        <MenuItem value={0}>
+          هنگام رسیدن زمان
+        </MenuItem>
+
+        <MenuItem value={5}>
+          ۵ دقیقه قبل
+        </MenuItem>
+
+        <MenuItem value={10}>
+          ۱۰ دقیقه قبل
+        </MenuItem>
+
+        <MenuItem value={15}>
+          ۱۵ دقیقه قبل
+        </MenuItem>
+
+        <MenuItem value={30}>
+          ۳۰ دقیقه قبل
+        </MenuItem>
+
+        <MenuItem value={60}>
+          ۱ ساعت قبل
+        </MenuItem>
+      </Select>
+    </FormControl>
+  </div>
+)}
   <button
   type="button"
   onClick={() =>
