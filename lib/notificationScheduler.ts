@@ -35,15 +35,37 @@ function isTaskDue(
   task: Task,
   notificationMinutesBefore: number,
 ) {
-  if (!task.id) return null;
+  if (!task.id) {
+    alert("❌ Task ID ندارد");
+    return null;
+  }
 
-  if (task.completed) return null;
+  if (task.completed) {
+    alert(`❌ Task تکمیل شده است: ${task.title}`);
+    return null;
+  }
 
-  if (!task.scheduledTimes?.length) return null;
+  if (!task.scheduledTimes?.length) {
+    alert(`❌ Task زمان ندارد: ${task.title}`);
+    return null;
+  }
 
   const today = getTodayIndex();
 
+  alert(
+    `🔎 بررسی روز\n` +
+    `Task: ${task.title}\n` +
+    `Today Index: ${today}\n` +
+    `Scheduled Days: ${task.scheduledDays.join(", ")}`,
+  );
+
   if (!task.scheduledDays.includes(today)) {
+    alert(
+      `❌ روز Task با امروز مطابقت ندارد\n` +
+      `Today: ${today}\n` +
+      `Task Days: ${task.scheduledDays.join(", ")}`,
+    );
+
     return null;
   }
 
@@ -52,6 +74,13 @@ function isTaskDue(
   const currentMinutes =
     now.getHours() * 60 + now.getMinutes();
 
+  alert(
+    `⏰ زمان فعلی\n` +
+    `Time: ${now.toLocaleTimeString("fa-IR")}\n` +
+    `Current Minutes: ${currentMinutes}\n` +
+    `Before: ${notificationMinutesBefore}`,
+  );
+
   for (const time of task.scheduledTimes) {
     const [hours, minutes] = time.split(":").map(Number);
 
@@ -59,6 +88,12 @@ function isTaskDue(
       Number.isNaN(hours) ||
       Number.isNaN(minutes)
     ) {
+      alert(
+        `❌ زمان نامعتبر\n` +
+        `Task: ${task.title}\n` +
+        `Time: ${time}`,
+      );
+
       continue;
     }
 
@@ -68,21 +103,38 @@ function isTaskDue(
     const notificationMinutes =
       taskMinutes - notificationMinutesBefore;
 
-    /*
-     * اگر زمان اعلان رسیده یا گذشته باشد،
-     * آن را موعددار در نظر می‌گیریم.
-     *
-     * جلوگیری از ارسال دوباره توسط notifiedTasks انجام می‌شود.
-     */
+    alert(
+      `🕐 بررسی زمان Task\n` +
+      `Task: ${task.title}\n` +
+      `Task Time: ${time}\n` +
+      `Task Minutes: ${taskMinutes}\n` +
+      `Notification Minutes: ${notificationMinutes}\n` +
+      `Current Minutes: ${currentMinutes}\n` +
+      `Current >= Notification: ${
+        currentMinutes >= notificationMinutes
+      }`,
+    );
+
     if (
       currentMinutes >= notificationMinutes
     ) {
+      alert(
+        `✅ موعد پیدا شد!\n` +
+        `Task: ${task.title}\n` +
+        `Time: ${time}`,
+      );
+
       return {
         time,
         notificationMinutes,
       };
     }
   }
+
+  alert(
+    `❌ هیچ زمان موعدداری برای این Task پیدا نشد\n` +
+    `Task: ${task.title}`,
+  );
 
   return null;
 }
