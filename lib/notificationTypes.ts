@@ -4,6 +4,7 @@ export type ScheduledNotification = {
   date: string;
   time: string;
   minutesBefore: number;
+  timeZone: string;
 };
 
 export type SwMessage =
