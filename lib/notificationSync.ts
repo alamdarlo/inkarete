@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { postMessageToServiceWorker } from "@/lib/notifications";
-import { computeTodaySchedule } from "@/lib/notificationSchedule";
+import { computeUpcomingSchedule } from "@/lib/notificationSchedule";
 
 export async function syncNotificationSchedule() {
   const settings = await db.settings.get("app");
@@ -19,15 +19,15 @@ export async function syncNotificationSchedule() {
   }
 
   const tasks = await db.tasks.orderBy("order").toArray();
-  const schedule = computeTodaySchedule(tasks, settings.notificationMinutesBefore);
+  const schedule = computeUpcomingSchedule(
+    tasks,
+    settings.notificationMinutesBefore,
+    30,
+  );
 
   await postMessageToServiceWorker({
     type: "UPDATE_SCHEDULE",
     schedule,
     enabled: true,
-  });
-
-  await postMessageToServiceWorker({
-    type: "START_SCHEDULER",
   });
 }
