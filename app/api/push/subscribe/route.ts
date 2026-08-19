@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendPushNotification, type PushSubscriptionPayload } from "@/lib/server/push";
 
-let subscription: PushSubscriptionPayload | null = null;
-
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as PushSubscriptionPayload;
@@ -11,16 +9,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid push subscription" }, { status: 400 });
     }
 
-    subscription = body;
+    await sendPushNotification(body, {
+      type: "TEST_NOTIFICATION",
+      title: "این کارته",
+      body: "Web Push با موفقیت به دستگاه شما رسید.",
+      tag: "inkarete-web-push-test",
+    });
 
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    return NextResponse.json({ ok: true, testPushSent: true });
+  } catch (error) {
+    console.error("Push subscription test failed:", error);
+    return NextResponse.json({ error: "Failed to send test push" }, { status: 500 });
   }
 }
-
-export async function GET() {
-  return NextResponse.json({ subscribed: Boolean(subscription) });
-}
-
-export { subscription };
