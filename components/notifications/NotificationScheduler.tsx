@@ -3,10 +3,6 @@
 import { useEffect } from "react";
 import { syncNotificationSchedule } from "@/lib/notificationSync";
 import { useSettingsStore } from "@/store/settingsStore";
-import {
-  startNotificationScheduler,
-  stopNotificationScheduler,
-} from "@/lib/notificationScheduler";
 
 export default function NotificationScheduler() {
   const notificationsEnabled = useSettingsStore((state) => state.notificationsEnabled);
@@ -17,17 +13,7 @@ export default function NotificationScheduler() {
       return;
     }
 
-    if (notificationsEnabled) {
-      void syncNotificationSchedule();
-      startNotificationScheduler();
-    } else {
-      stopNotificationScheduler();
-      void syncNotificationSchedule();
-    }
-
-    return () => {
-      stopNotificationScheduler();
-    };
+    void syncNotificationSchedule();
   }, [initialized, notificationsEnabled]);
 
   return null;
