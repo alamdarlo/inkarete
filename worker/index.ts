@@ -58,15 +58,14 @@ function startBackgroundChecks(): void {
     return;
   }
 
-  checkDueNotifications();
+  void checkDueNotifications();
 
-  checkInterval = setInterval(
-    checkDueNotifications,
-    15000,
-  );
+  checkInterval = setInterval(() => {
+    void checkDueNotifications();
+  }, 15000);
 }
 
-function checkDueNotifications(): void {
+async function checkDueNotifications(): Promise<void> {
   if (!schedulerEnabled || !schedule.length) {
     return;
   }
@@ -90,11 +89,16 @@ function checkDueNotifications(): void {
 
     notifiedKeys.add(key);
 
-    void displayNotification(
-      item.title,
-      getNotificationBody(item.minutesBefore),
-      key,
-    );
+    try {
+      await displayNotification(
+        item.title,
+        getNotificationBody(item.minutesBefore),
+        key,
+      );
+    } catch (error) {
+      notifiedKeys.delete(key);
+      console.error("Failed to display scheduled notification:", error);
+    }
   }
 }
 
@@ -118,7 +122,19 @@ self.addEventListener(
         );
         break;
 
-      case "UPDATE_SCHEDULE":
+      case "UPDATE_SCHEDULE": {
+        const nextKeys = new Set(
+          data.schedule.map((item) =>
+            getNotificationKey(item.taskId, item.date, item.time),
+          ),
+        );
+
+        for (const key of notifiedKeys) {
+          if (!nextKeys.has(key)) {
+            notifiedKeys.delete(key);
+          }
+        }
+
         schedule = data.schedule;
         schedulerEnabled = data.enabled;
 
@@ -129,6 +145,7 @@ self.addEventListener(
         }
 
         break;
+      }
 
       case "START_SCHEDULER":
         schedulerEnabled = true;
