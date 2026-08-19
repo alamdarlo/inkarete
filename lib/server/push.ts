@@ -22,17 +22,13 @@ function configureWebPush(): void {
 export type PushSubscriptionPayload = {
   endpoint: string;
   expirationTime?: number | null;
-  keys?: {
-    p256dh?: string;
-    auth?: string;
+  keys: {
+    p256dh: string;
+    auth: string;
   };
 };
 
-export async function sendPushNotification(
-  subscription: PushSubscriptionPayload,
-  payload: Record<string, unknown>,
-): Promise<void> {
+export async function sendPushNotification(subscription: PushSubscriptionPayload, payload: Record<string, unknown>): Promise<void> {
   configureWebPush();
-
   await webpush.sendNotification(subscription, JSON.stringify(payload));
 }
