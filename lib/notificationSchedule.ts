@@ -64,28 +64,32 @@ export function computeTodaySchedule(
   return schedule;
 }
 
+export function getNotificationMinutes(item: ScheduledNotification): number | null {
+  const [hours, minutes] = item.time.split(":").map(Number);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return null;
+  }
+
+  return hours * 60 + minutes - item.minutesBefore;
+}
+
 export function isScheduleDue(
   item: ScheduledNotification,
   now = new Date(),
 ): boolean {
-  const itemDate = item.date;
-  const todayKey = getTodayKey(now);
-
-  if (itemDate !== todayKey) {
+  if (item.date !== getTodayKey(now)) {
     return false;
   }
 
-  const [hours, minutes] = item.time.split(":").map(Number);
-
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+  const notificationMinutes = getNotificationMinutes(item);
+  if (notificationMinutes === null) {
     return false;
   }
 
-  const taskMinutes = hours * 60 + minutes;
-  const notificationMinutes = taskMinutes - item.minutesBefore;
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-  return currentMinutes === notificationMinutes;
+  return currentMinutes >= notificationMinutes;
 }
 
 export function getNotificationBody(minutesBefore: number): string {
