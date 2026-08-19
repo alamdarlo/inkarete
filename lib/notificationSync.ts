@@ -7,14 +7,10 @@ import { computeUpcomingSchedule } from "@/lib/notificationSchedule";
 export async function syncNotificationSchedule() {
   const settings = await db.settings.get("app");
 
-  if (!settings) {
-    return;
-  }
+  if (!settings) return;
 
   if (!settings.notificationsEnabled) {
-    await postMessageToServiceWorker({
-      type: "STOP_SCHEDULER",
-    });
+    await postMessageToServiceWorker({ type: "STOP_SCHEDULER" });
     return;
   }
 
@@ -23,6 +19,7 @@ export async function syncNotificationSchedule() {
     tasks,
     settings.notificationMinutesBefore,
     30,
+    settings.timeZone,
   );
 
   await postMessageToServiceWorker({
