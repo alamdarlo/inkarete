@@ -17,6 +17,7 @@ const DEFAULT_ICON = "/icons/icon-192.png";
 const NOTIFIED_DB_NAME = "inkarete-notifications";
 const NOTIFIED_DB_VERSION = 1;
 const NOTIFIED_STORE_NAME = "notified";
+const SCHEDULE_STORE_NAME = "schedule";
 const NOTIFIED_RETENTION_DAYS = 31;
 
 let schedule: ScheduledNotification[] = [];
@@ -24,13 +25,14 @@ let schedulerEnabled = false;
 let checkInterval: ReturnType<typeof setInterval> | null = null;
 let notifiedKeys = new Set<string>();
 let notifiedKeysLoaded = false;
+let scheduleLoaded = false;
 let checkInProgress = false;
 
 function getIconUrl(): string {
   return new URL(DEFAULT_ICON, self.location.origin).href;
 }
 
-function openNotifiedDatabase(): Promise<IDBDatabase> {
+function openNotificationDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(NOTIFIED_DB_NAME, NOTIFIED_DB_VERSION);
 
@@ -39,6 +41,10 @@ function openNotifiedDatabase(): Promise<IDBDatabase> {
 
       if (!database.objectStoreNames.contains(NOTIFIED_STORE_NAME)) {
         database.createObjectStore(NOTIFIED_STORE_NAME, { keyPath: "key" });
+      }
+
+      if (!database.objectStoreNames.contains(SCHEDULE_STORE_NAME)) {
+        database.createObjectStore(SCHEDULE_STORE_NAME, { keyPath: "id" });
       }
     };
 
@@ -52,7 +58,7 @@ async function loadNotifiedKeys(): Promise<void> {
     return;
   }
 
-  const database = await openNotifiedDatabase();
+  const database = await openNotificationDatabase();
 
   try {
     const records = await new Promise<Array<{ key: string; createdAt: number }>>((resolve, reject) => {
@@ -79,7 +85,7 @@ async function loadNotifiedKeys(): Promise<void> {
 }
 
 async function saveNotifiedKey(key: string): Promise<void> {
-  const database = await openNotifiedDatabase();
+  const database = await openNotificationDatabase();
 
   try {
     await new Promise<void>((resolve, reject) => {
@@ -99,7 +105,7 @@ async function deleteNotifiedKeys(keys: string[]): Promise<void> {
     return;
   }
 
-  const database = await openNotifiedDatabase();
+  const database = await openNotificationDatabase();
 
   try {
     await new Promise<void>((resolve, reject) => {
@@ -122,7 +128,7 @@ async function deleteNotifiedKeys(keys: string[]): Promise<void> {
 async function clearAllNotifiedKeys(): Promise<void> {
   notifiedKeys.clear();
 
-  const database = await openNotifiedDatabase();
+  const database = await openNotificationDatabase();
 
   try {
     await new Promise<void>((resolve, reject) => {
@@ -132,6 +138,51 @@ async function clearAllNotifiedKeys(): Promise<void> {
       transaction.onerror = () => reject(transaction.error ?? new Error("Failed to clear notification keys"));
       transaction.onabort = () => reject(transaction.error ?? new Error("Notification key transaction aborted"));
     });
+  } finally {
+    database.close();
+  }
+}
+
+async function saveSchedule(nextSchedule: ScheduledNotification[], enabled: boolean): Promise<void> {
+  const database = await openNotificationDatabase();
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(SCHEDULE_STORE_NAME, "readwrite");
+      const store = transaction.objectStore(SCHEDULE_STORE_NAME);
+      store.clear();
+      store.put({ id: "current", schedule: nextSchedule, enabled });
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error ?? new Error("Failed to save notification schedule"));
+      transaction.onabort = () => reject(transaction.error ?? new Error("Notification schedule transaction aborted"));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function loadSchedule(): Promise<void> {
+  if (scheduleLoaded) {
+    return;
+  }
+
+  const database = await openNotificationDatabase();
+
+  try {
+    const record = await new Promise<{ schedule: ScheduledNotification[]; enabled: boolean } | undefined>((resolve, reject) => {
+      const transaction = database.transaction(SCHEDULE_STORE_NAME, "readonly");
+      const request = transaction.objectStore(SCHEDULE_STORE_NAME).get("current");
+
+      request.onsuccess = () => resolve(request.result as { schedule: ScheduledNotification[]; enabled: boolean } | undefined);
+      request.onerror = () => reject(request.error ?? new Error("Failed to load notification schedule"));
+    });
+
+    if (record) {
+      schedule = record.schedule;
+      schedulerEnabled = record.enabled;
+    }
+
+    scheduleLoaded = true;
   } finally {
     database.close();
   }
@@ -185,7 +236,11 @@ async function checkDueNotifications(): Promise<void> {
   checkInProgress = true;
 
   try {
-    await loadNotifiedKeys();
+    await Promise.all([loadNotifiedKeys(), loadSchedule()]);
+
+    if (!schedulerEnabled || !schedule.length) {
+      return;
+    }
 
     const now = new Date();
 
@@ -218,23 +273,29 @@ async function checkDueNotifications(): Promise<void> {
   }
 }
 
-self.addEventListener(
-  "install",
-  () => {
-    void loadNotifiedKeys().catch((error) => {
-      console.error("Failed to initialize notification storage:", error);
-    });
-  },
-);
+async function restoreScheduler(): Promise<void> {
+  await Promise.all([loadNotifiedKeys(), loadSchedule()]);
 
-self.addEventListener(
-  "activate",
-  () => {
-    void loadNotifiedKeys().catch((error) => {
-      console.error("Failed to load notification storage:", error);
-    });
-  },
-);
+  if (schedulerEnabled && schedule.length) {
+    startBackgroundChecks();
+  }
+}
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    loadNotifiedKeys().catch((error) => {
+      console.error("Failed to initialize notification storage:", error);
+    }),
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    restoreScheduler().catch((error) => {
+      console.error("Failed to restore notification scheduler:", error);
+    }),
+  );
+});
 
 self.addEventListener(
   "message",
@@ -281,6 +342,8 @@ self.addEventListener(
 
             schedule = data.schedule;
             schedulerEnabled = data.enabled;
+            scheduleLoaded = true;
+            await saveSchedule(schedule, schedulerEnabled);
 
             if (schedulerEnabled && schedule.length) {
               startBackgroundChecks();
@@ -292,14 +355,25 @@ self.addEventListener(
         break;
 
       case "START_SCHEDULER":
-        schedulerEnabled = true;
-        startBackgroundChecks();
+        event.waitUntil(
+          (async () => {
+            schedulerEnabled = true;
+            scheduleLoaded = true;
+            await saveSchedule(schedule, true);
+            startBackgroundChecks();
+          })(),
+        );
         break;
 
       case "STOP_SCHEDULER":
         schedulerEnabled = false;
         stopBackgroundChecks();
-        event.waitUntil(clearAllNotifiedKeys());
+        event.waitUntil(
+          Promise.all([
+            clearAllNotifiedKeys(),
+            saveSchedule([], false),
+          ]),
+        );
         break;
 
       default:
