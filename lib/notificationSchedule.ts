@@ -1,8 +1,8 @@
 import type { Task, WeekDay } from "@/lib/db";
 import type { ScheduledNotification } from "@/lib/notificationTypes";
 
-export function getTodayIndex(): WeekDay {
-  const day = new Date().getDay();
+export function getTodayIndex(date = new Date()): WeekDay {
+  const day = date.getDay();
 
   return day === 6 ? 0 : ((day + 1) as WeekDay);
 }
@@ -23,24 +23,21 @@ export function getNotificationKey(
   return `${taskId}-${date}-${time}`;
 }
 
-export function computeTodaySchedule(
+export function computeScheduleForDate(
   tasks: Task[],
   minutesBefore: number,
+  date = new Date(),
 ): ScheduledNotification[] {
-  const today = getTodayIndex();
-  const todayKey = getTodayKey();
+  const day = getTodayIndex(date);
+  const dateKey = getTodayKey(date);
   const schedule: ScheduledNotification[] = [];
 
   for (const task of tasks) {
-    if (!task.id || task.completed) {
+    if (!task.id || task.completed || !task.scheduledTimes?.length) {
       continue;
     }
 
-    if (!task.scheduledTimes?.length) {
-      continue;
-    }
-
-    if (!task.scheduledDays.includes(today)) {
+    if (!task.scheduledDays.includes(day)) {
       continue;
     }
 
@@ -54,11 +51,36 @@ export function computeTodaySchedule(
       schedule.push({
         taskId: task.id,
         title: task.title,
-        date: todayKey,
+        date: dateKey,
         time,
         minutesBefore,
       });
     }
+  }
+
+  return schedule;
+}
+
+export function computeTodaySchedule(
+  tasks: Task[],
+  minutesBefore: number,
+): ScheduledNotification[] {
+  return computeScheduleForDate(tasks, minutesBefore);
+}
+
+export function computeUpcomingSchedule(
+  tasks: Task[],
+  minutesBefore: number,
+  days = 30,
+  startDate = new Date(),
+): ScheduledNotification[] {
+  const schedule: ScheduledNotification[] = [];
+
+  for (let offset = 0; offset < days; offset += 1) {
+    const date = new Date(startDate);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + offset);
+    schedule.push(...computeScheduleForDate(tasks, minutesBefore, date));
   }
 
   return schedule;
