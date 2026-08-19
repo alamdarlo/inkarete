@@ -8,6 +8,7 @@ import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import { useSettingsStore } from "@/store/settingsStore";
 import { showTaskNotification, requestNotificationPermission } from "@/lib/notifications";
+import { subscribeToPush } from "@/lib/push";
 import { TIME_ZONE_OPTIONS } from "@/lib/timezone";
 
 export default function SettingsPage() {
@@ -35,7 +36,14 @@ export default function SettingsPage() {
 
   const enableNotifications = async () => {
     const permission = await requestNotificationPermission();
-    await setNotificationsEnabled(permission === "granted");
+
+    if (permission !== "granted") {
+      await setNotificationsEnabled(false);
+      return;
+    }
+
+    await setNotificationsEnabled(true);
+    await subscribeToPush();
   };
 
   return (
@@ -50,12 +58,10 @@ export default function SettingsPage() {
 
         <section className="mb-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <h2 className="mb-3 text-sm font-bold">نمایش صفحه اصلی</h2>
-
           <div className="flex items-center justify-between border-b border-slate-100 py-2 dark:border-slate-700">
             <div><div className="text-sm">نمایش روزهای هفته</div><div className="mt-0.5 text-xs text-slate-400">نمایش تب روزهای هفته در صفحه اصلی</div></div>
             <Switch checked={showWeekDayTabs} onChange={(event) => setShowWeekDayTabs(event.target.checked)} />
           </div>
-
           {showWeekDayTabs && (
             <div className="py-3">
               <div className="mb-2 text-sm">جهت نمایش روزهای هفته</div>
@@ -69,12 +75,10 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
-
           <div className="flex items-center justify-between border-t border-slate-100 py-2 dark:border-slate-700">
             <div><div className="text-sm">نمایش پیشرفت کارها</div><div className="mt-0.5 text-xs text-slate-400">نمایش نوار پیشرفت روز</div></div>
             <Switch checked={showTaskProgress} onChange={(event) => setShowTaskProgress(event.target.checked)} />
           </div>
-
           <div className="flex items-center justify-between border-t border-slate-100 py-2 dark:border-slate-700">
             <div><div className="text-sm">نمایش زمان کارها</div><div className="mt-0.5 text-xs text-slate-400">نمایش ساعت تعیین‌شده برای هر کار</div></div>
             <Switch checked={showTaskTimes} onChange={(event) => setShowTaskTimes(event.target.checked)} />
@@ -82,10 +86,7 @@ export default function SettingsPage() {
         </section>
 
         <section className="mb-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <div className="mb-3">
-            <div className="text-sm font-bold">منطقه زمانی</div>
-            <div className="mt-1 text-xs text-slate-400">ساعت و روزهای اعلان‌ها بر اساس این منطقه زمانی محاسبه می‌شود.</div>
-          </div>
+          <div className="mb-3"><div className="text-sm font-bold">منطقه زمانی</div><div className="mt-1 text-xs text-slate-400">ساعت و روزهای اعلان‌ها بر اساس این منطقه زمانی محاسبه می‌شود.</div></div>
           <FormControl fullWidth size="small">
             <InputLabel id="time-zone-label">منطقه زمانی</InputLabel>
             <Select labelId="time-zone-label" value={timeZone} label="منطقه زمانی" onChange={(event) => setTimeZone(event.target.value)}>
@@ -113,12 +114,7 @@ export default function SettingsPage() {
               <FormControl fullWidth size="small">
                 <InputLabel id="notification-minutes-label">زمان یادآوری</InputLabel>
                 <Select labelId="notification-minutes-label" value={notificationMinutesBefore} label="زمان یادآوری" onChange={(event) => setNotificationMinutesBefore(Number(event.target.value))}>
-                  <MenuItem value={0}>هنگام رسیدن زمان</MenuItem>
-                  <MenuItem value={5}>۵ دقیقه قبل</MenuItem>
-                  <MenuItem value={10}>۱۰ دقیقه قبل</MenuItem>
-                  <MenuItem value={15}>۱۵ دقیقه قبل</MenuItem>
-                  <MenuItem value={30}>۳۰ دقیقه قبل</MenuItem>
-                  <MenuItem value={60}>۱ ساعت قبل</MenuItem>
+                  <MenuItem value={0}>هنگام رسیدن زمان</MenuItem><MenuItem value={5}>۵ دقیقه قبل</MenuItem><MenuItem value={10}>۱۰ دقیقه قبل</MenuItem><MenuItem value={15}>۱۵ دقیقه قبل</MenuItem><MenuItem value={30}>۳۰ دقیقه قبل</MenuItem><MenuItem value={60}>۱ ساعت قبل</MenuItem>
                 </Select>
               </FormControl>
             </div>
