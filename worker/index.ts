@@ -210,6 +210,23 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(restoreScheduler().catch((error) => console.error("Failed to restore notification scheduler:", error)));
 });
 
+self.addEventListener("push", (event) => {
+  event.waitUntil((async () => {
+    let payload: { title?: string; body?: string; tag?: string } = {};
+    try {
+      payload = event.data?.json() ?? {};
+    } catch {
+      payload = { body: event.data?.text() ?? "" };
+    }
+
+    await displayNotification(
+      payload.title ?? "این کارته",
+      payload.body ?? "یک اعلان جدید دارید.",
+      payload.tag ?? `inkarete-push-${Date.now()}`,
+    );
+  })());
+});
+
 self.addEventListener("message", (event: ExtendableMessageEvent) => {
   const data = event.data as SwMessage | undefined;
   if (!data?.type) return;
