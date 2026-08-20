@@ -17,11 +17,13 @@ export default function SettingsPage() {
     weekDayOrientation,
     showTaskProgress,
     showTaskTimes,
+    showCategories,
     initialize,
     setShowWeekDayTabs,
     setWeekDayOrientation,
     setShowTaskProgress,
     setShowTaskTimes,
+    setShowCategories,
     notificationsEnabled,
     setNotificationsEnabled,
     notificationMinutesBefore,
@@ -79,6 +81,10 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between border-t border-slate-100 py-2 dark:border-slate-700">
             <div><div className="text-sm">نمایش زمان کارها</div><div className="mt-0.5 text-xs text-slate-400">نمایش ساعت تعیین‌شده برای هر کار</div></div>
             <Switch checked={showTaskTimes} onChange={(event) => setShowTaskTimes(event.target.checked)} />
+          </div>
+          <div className="flex items-center justify-between border-t border-slate-100 py-2 dark:border-slate-700">
+            <div><div className="text-sm">نمایش دسته‌بندی‌ها</div><div className="mt-0.5 text-xs text-slate-400">نمایش انتخاب دسته‌بندی هنگام ایجاد کار و دسته‌بندی روی کارها</div></div>
+            <Switch checked={showCategories} onChange={(event) => setShowCategories(event.target.checked)} />
           </div>
         </section>
 
