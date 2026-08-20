@@ -22,5 +22,3 @@ export type SwMessage =
   | {
       type: "STOP_SCHEDULER";
     };
-
-export const NOTIFIED_STORAGE_KEY = "inkarete-notified-keys";
