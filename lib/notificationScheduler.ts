@@ -16,36 +16,23 @@ const notifiedTasks = new Set<string>();
 async function checkNotifications() {
   const settings = await db.settings.get("app");
 
-  if (!settings || !settings.notificationsEnabled) {
-    return;
-  }
+  if (!settings || !settings.notificationsEnabled) return;
 
   const tasks = await db.tasks.orderBy("order").toArray();
-
   const schedule = computeTodaySchedule(
     tasks,
     settings.notificationMinutesBefore,
+    settings.timeZone,
   );
-
   const now = new Date();
 
   for (const item of schedule) {
-    if (!isScheduleDue(item, now)) {
-      continue;
-    }
+    if (!isScheduleDue(item, now)) continue;
 
-    const key = getNotificationKey(
-      item.taskId,
-      item.date,
-      item.time,
-    );
-
-    if (notifiedTasks.has(key)) {
-      continue;
-    }
+    const key = getNotificationKey(item.taskId, item.date, item.time);
+    if (notifiedTasks.has(key)) continue;
 
     notifiedTasks.add(key);
-
     await showTaskNotification(
       item.title,
       getNotificationBody(item.minutesBefore),
@@ -55,24 +42,15 @@ async function checkNotifications() {
 }
 
 export function startNotificationScheduler() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  if (schedulerInterval) {
-    return;
-  }
+  if (typeof window === "undefined" || schedulerInterval) return;
 
   void checkNotifications();
-
-  schedulerInterval = setInterval(() => {
-    void checkNotifications();
-  }, 15000);
+  schedulerInterval = setInterval(() => void checkNotifications(), 15000);
 }
 
 export function stopNotificationScheduler() {
-  if (schedulerInterval) {
-    clearInterval(schedulerInterval);
-    schedulerInterval = null;
-  }
+  if (!schedulerInterval) return;
+
+  clearInterval(schedulerInterval);
+  schedulerInterval = null;
 }
