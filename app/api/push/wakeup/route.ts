@@ -3,6 +3,9 @@ import { sendPushNotification } from "@/lib/server/push";
 import { getPushSubscriptions, removePushSubscription } from "@/lib/server/pushStore";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
+
+const PUSH_BATCH_SIZE = 10;
 
 type WakeupResult = {
   sent: number;
@@ -20,21 +23,27 @@ export async function GET(request: Request) {
   const result: WakeupResult = { sent: 0, removed: 0 };
   const subscriptions = await getPushSubscriptions();
 
-  await Promise.all(subscriptions.map(async (subscription) => {
-    try {
-      await sendPushNotification(subscription, { type: "WAKE_UP" }, { TTL: 600 });
-      result.sent += 1;
-    } catch (error) {
-      const statusCode = (error as { statusCode?: number }).statusCode;
-      if (statusCode === 404 || statusCode === 410) {
-        await removePushSubscription(subscription.endpoint);
-        result.removed += 1;
-        return;
-      }
+  for (let start = 0; start < subscriptions.length; start += PUSH_BATCH_SIZE) {
+    const batch = subscriptions.slice(start, start + PUSH_BATCH_SIZE);
 
-      console.error("Push wake-up failed:", error);
-    }
-  }));
+    await Promise.all(
+      batch.map(async (subscription) => {
+        try {
+          await sendPushNotification(subscription, { type: "WAKE_UP" }, { TTL: 600 });
+          result.sent += 1;
+        } catch (error) {
+          const statusCode = (error as { statusCode?: number }).statusCode;
+          if (statusCode === 404 || statusCode === 410) {
+            await removePushSubscription(subscription.endpoint);
+            result.removed += 1;
+            return;
+          }
+
+          console.error("Push wake-up failed:", error);
+        }
+      }),
+    );
+  }
 
   return NextResponse.json({ ok: true, ...result });
 }
