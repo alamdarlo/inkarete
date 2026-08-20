@@ -10,7 +10,6 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { showTaskNotification } from "@/lib/notifications";
 import { requestNotificationPermission } from "@/lib/notificationSupport";
 import { subscribeToPush } from "@/lib/push";
-import { TIME_ZONE_OPTIONS } from "@/lib/timezone";
 
 export default function SettingsPage() {
   const {
@@ -27,8 +26,6 @@ export default function SettingsPage() {
     setNotificationsEnabled,
     notificationMinutesBefore,
     setNotificationMinutesBefore,
-    timeZone,
-    setTimeZone,
   } = useSettingsStore();
 
   useEffect(() => {
@@ -83,16 +80,6 @@ export default function SettingsPage() {
             <div><div className="text-sm">نمایش زمان کارها</div><div className="mt-0.5 text-xs text-slate-400">نمایش ساعت تعیین‌شده برای هر کار</div></div>
             <Switch checked={showTaskTimes} onChange={(event) => setShowTaskTimes(event.target.checked)} />
           </div>
-        </section>
-
-        <section className="mb-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <div className="mb-3"><div className="text-sm font-bold">منطقه زمانی</div><div className="mt-1 text-xs text-slate-400">ساعت و روزهای اعلان‌ها بر اساس این منطقه زمانی محاسبه می‌شود.</div></div>
-          <FormControl fullWidth size="small">
-            <InputLabel id="time-zone-label">منطقه زمانی</InputLabel>
-            <Select labelId="time-zone-label" value={timeZone} label="منطقه زمانی" onChange={(event) => setTimeZone(event.target.value)}>
-              {TIME_ZONE_OPTIONS.map((option) => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
-            </Select>
-          </FormControl>
         </section>
 
         <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
