@@ -49,6 +49,7 @@ export type AppSettings = {
   weekDayOrientation: "horizontal" | "vertical";
   showTaskProgress: boolean;
   showTaskTimes: boolean;
+  showCategories: boolean;
   notificationsEnabled: boolean;
   notificationMinutesBefore: number;
 };
@@ -105,6 +106,22 @@ export class AppDatabase extends Dexie {
           .toCollection()
           .modify((settings) => {
             delete settings.timeZone;
+          });
+      });
+
+    this.version(6)
+      .stores({
+        tasks: "++id, completed, createdAt, order",
+        history: "++id, action, createdAt, taskId",
+        categories: "++id, name, createdAt",
+        settings: "id",
+      })
+      .upgrade(async (transaction) => {
+        await transaction
+          .table<AppSettings, string>("settings")
+          .toCollection()
+          .modify((settings) => {
+            settings.showCategories = true;
           });
       });
 
