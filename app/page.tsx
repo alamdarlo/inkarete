@@ -29,6 +29,7 @@ export default function Home() {
     weekDayOrientation,
     showTaskProgress,
     showTaskTimes,
+    showCategories,
   } = useSettingsStore();
   const initialize = useSettingsStore((state) => state.initialize);
 
@@ -41,10 +42,10 @@ export default function Home() {
   }, [initialize]);
 
   useEffect(() => {
-    if (!categoryId && categories.length > 0) {
+    if (showCategories && !categoryId && categories.length > 0) {
       setCategoryId(categories[0].id!);
     }
-  }, [categoryId, categories]);
+  }, [showCategories, categoryId, categories]);
 
   const addHistory = async (
     taskId: number,
@@ -62,7 +63,7 @@ export default function Home() {
 
   const addTask = async () => {
     const title = task.trim();
-    if (!title || !categoryId) return;
+    if (!title || (showCategories && !categoryId)) return;
 
     const order = tasks.length > 0
       ? Math.max(...tasks.map((item) => item.order)) + 1
@@ -71,7 +72,7 @@ export default function Home() {
     const id = await db.tasks.add({
       title,
       completed: false,
-      categoryId,
+      ...(showCategories && categoryId ? { categoryId } : {}),
       order,
       scheduledDays,
       scheduledTimes,
@@ -131,12 +132,14 @@ export default function Home() {
               <div className="flex flex-1 items-center gap-1">
                 <ScheduleSelect value={scheduledDays} onChange={setScheduledDays} className="flex-1" />
                 <TimeSelect value={scheduledTimes} onChange={setScheduledTimes} />
-                <CategorySelect value={categoryId} onChange={setCategoryId} className="flex-1" />
+                {showCategories && (
+                  <CategorySelect value={categoryId} onChange={setCategoryId} className="flex-1" />
+                )}
               </div>
-              <Button type="button" onClick={addTask} disabled={!categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "flex", sm: "none" }, minWidth: "auto", height: 40, px: 2, borderRadius: 2, fontSize: 14, fontWeight: 500, color: "success.main", "&:hover": { backgroundColor: "action.hover" }, "&.Mui-disabled": { color: "text.disabled" } }}>
+              <Button type="button" onClick={addTask} disabled={showCategories && !categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "flex", sm: "none" }, minWidth: "auto", height: 40, px: 2, borderRadius: 2, fontSize: 14, fontWeight: 500, color: "success.main", "&:hover": { backgroundColor: "action.hover" }, "&.Mui-disabled": { color: "text.disabled" } }}>
                 افزودن
               </Button>
-              <IconButton type="button" onClick={addTask} disabled={!categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "none", sm: "inline-flex" }, width: 40, height: 40 }}>
+              <IconButton type="button" onClick={addTask} disabled={showCategories && !categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "none", sm: "inline-flex" }, width: 40, height: 40 }}>
                 <AddCircleIcon fontSize="medium" />
               </IconButton>
             </div>
