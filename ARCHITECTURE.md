@@ -9,6 +9,7 @@
 - Preview Vercel: تست شده و موفق
 - هدف refactor: ساده‌سازی notification subsystem، حذف timezone تنظیم‌شدنی، حذف باقی‌مانده‌های priority و قابل‌اعتماد کردن notification روی موبایل/PWA.
 - `priority` از مدل task، UI و schema حذف شده است.
+- تنظیم `showCategories` برای کنترل نمایش CategorySelect اضافه شده است.
 
 ## معماری notification فعلی
 
@@ -74,19 +75,22 @@ taskId + localDate + taskTime
 - UI state
 - settings UI
 - local persistence
+- نمایش `CategorySelect` فقط وقتی `showCategories` فعال است
 
-مسئولیت notification:
+Category behavior:
 
-- permission/platform detection
-- Push subscription
-- service-worker communication
-- local schedule evaluation در Service Worker
+- `showCategories = true` → CategorySelect در فرم task نمایش داده می‌شود.
+- `showCategories = false` → dropdown انتخاب category اصلاً render نمی‌شود و task جدید بدون category ذخیره می‌شود.
+- category موجود روی taskهای قبلی پاک نمی‌شود.
+- اگر task category داشته باشد، label همان category روی task نمایش داده می‌شود؛ task بدون category هیچ label دسته‌بندی ندارد.
 
 ## IndexedDB
 
 Taskها و settings در IndexedDB محلی نگهداری می‌شوند.
 
 Schema باید با حذف priority و timezone هماهنگ باشد. Migration فعلی باید داده‌های قدیمی `priority` و `timeZone` را پاک کند و index قدیمی priority را حذف کند.
+
+`showCategories` یک setting پایدار است و migration آن با مقدار پیش‌فرض `true` اضافه شده است تا کاربران موجود رفتار قبلی UI را از دست ندهند.
 
 ## Web Push / Vercel / Redis
 
@@ -147,11 +151,12 @@ Feature `priority` عمداً از پروژه حذف شده است.
 ## فایل‌ها / نواحی مهم برای review بعدی
 
 - `app/page.tsx` — task UI و CRUD؛ نباید scheduler داخلی داشته باشد.
+- `app/settings/page.tsx` — تنظیمات نمایش و notification.
 - `lib/db.ts` — schema و migration IndexedDB.
 - `lib/notifications.ts` — permission/local notification/Push helpers.
 - Service Worker / `worker/` — محل بررسی schedule و نمایش notification در background.
 - APIهای `app/api/push/*` — subscription و wake-up server endpoints.
-- `store/settingsStore.ts` — settings بدون timezone.
+- `store/settingsStore.ts` — settings بدون timezone و با `showCategories`.
 - `.github/workflows/*` — CI و wake-up cron.
 - Vercel environment — Redis، VAPID و `PUSH_WAKEUP_SECRET`.
 
@@ -167,6 +172,8 @@ Feature `priority` عمداً از پروژه حذف شده است.
 - اضافه شدن/تنظیم GitHub Actions
 - استفاده از Redis/Vercel برای subscriptionهای Push
 - اصلاح install prompt one-time
+- اضافه شدن تنظیم نمایش CategorySelect
+- حفظ categoryهای قبلی هنگام خاموش کردن انتخاب category
 - build موفق در CI و Vercel
 - Preview تست شده
 
@@ -180,6 +187,7 @@ Feature `priority` عمداً از پروژه حذف شده است.
 - رفتار با ساعت دستی دستگاه
 - پاک شدن subscriptionهای نامعتبر از Redis
 - بررسی نهایی Service Worker روی Android/iOS
+- تست خاموش/روشن کردن category visibility و taskهای دارای/فاقد category
 
 ## قانون برای refactorهای بعدی
 
