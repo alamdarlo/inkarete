@@ -20,9 +20,6 @@ export type SwMessage =
       enabled: boolean;
     }
   | {
-      type: "START_SCHEDULER";
-    }
-  | {
       type: "STOP_SCHEDULER";
     };
 
