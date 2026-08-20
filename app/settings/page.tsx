@@ -7,7 +7,8 @@ import { FormControl, InputLabel, MenuItem, Select, Switch } from "@mui/material
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import { useSettingsStore } from "@/store/settingsStore";
-import { showTaskNotification, requestNotificationPermission } from "@/lib/notifications";
+import { showTaskNotification } from "@/lib/notifications";
+import { requestNotificationPermission } from "@/lib/notificationSupport";
 import { subscribeToPush } from "@/lib/push";
 import { TIME_ZONE_OPTIONS } from "@/lib/timezone";
 
@@ -31,12 +32,11 @@ export default function SettingsPage() {
   } = useSettingsStore();
 
   useEffect(() => {
-    initialize();
+    void initialize();
   }, [initialize]);
 
   const enableNotifications = async () => {
     const permission = await requestNotificationPermission();
-
     if (permission !== "granted") {
       await setNotificationsEnabled(false);
       return;
