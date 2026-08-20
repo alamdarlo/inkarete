@@ -3,9 +3,7 @@ import webpush from "web-push";
 let configured = false;
 
 function configureWebPush(): void {
-  if (configured) {
-    return;
-  }
+  if (configured) return;
 
   const subject = process.env.VAPID_SUBJECT;
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -28,7 +26,11 @@ export type PushSubscriptionPayload = {
   };
 };
 
-export async function sendPushNotification(subscription: PushSubscriptionPayload, payload: Record<string, unknown>): Promise<void> {
+export async function sendPushNotification(
+  subscription: PushSubscriptionPayload,
+  payload: Record<string, unknown>,
+  options?: webpush.RequestOptions,
+): Promise<void> {
   configureWebPush();
-  await webpush.sendNotification(subscription, JSON.stringify(payload));
+  await webpush.sendNotification(subscription, JSON.stringify(payload), options);
 }

@@ -1,287 +1,202 @@
 /// <reference lib="webworker" />
 
-import type { ScheduledNotification, SwMessage } from "../lib/notificationTypes";
-import { getNotificationBody, getNotificationKey, isScheduleDue } from "../lib/notificationSchedule";
-import { DEFAULT_TIME_ZONE } from "../lib/timezone";
-
 declare const self: ServiceWorkerGlobalScope;
 
-const DEFAULT_ICON = "/icons/icon-192.png";
-const NOTIFIED_DB_NAME = "inkarete-notifications";
-const NOTIFIED_DB_VERSION = 1;
-const NOTIFIED_STORE_NAME = "notified";
-const SCHEDULE_STORE_NAME = "schedule";
-const NOTIFIED_RETENTION_DAYS = 31;
+const TASK_DB_NAME = "taskDatabase";
+const NOTIFICATION_DB_NAME = "inkarete-notifications";
+const NOTIFIED_STORE = "notified";
+const WEEK_MINUTES = 7 * 24 * 60;
+const LATE_WINDOW_MINUTES = 10;
+const ICON = "/icons/icon-192.png";
 
-let schedule: ScheduledNotification[] = [];
-let schedulerEnabled = false;
-let checkInterval: ReturnType<typeof setInterval> | null = null;
-let notifiedKeys = new Set<string>();
-let notifiedKeysLoaded = false;
-let scheduleLoaded = false;
-let checkInProgress = false;
+type Task = {
+  id?: number;
+  title: string;
+  completed: boolean;
+  scheduledDays: number[];
+  scheduledTimes: string[];
+};
 
-function normalizeSchedule(items: ScheduledNotification[]): ScheduledNotification[] {
-  return items.map((item) => ({ ...item, timeZone: item.timeZone || DEFAULT_TIME_ZONE }));
+type Settings = {
+  notificationsEnabled: boolean;
+  notificationMinutesBefore: number;
+};
+
+type NotifiedRecord = { key: string; createdAt: number };
+
+function openDatabase(name: string): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(name);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error(`Failed to open ${name}`));
+  });
 }
 
-function getIconUrl(): string {
-  return new URL(DEFAULT_ICON, self.location.origin).href;
+async function readAppData(): Promise<{ tasks: Task[]; settings?: Settings }> {
+  const database = await openDatabase(TASK_DB_NAME);
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = database.transaction(["tasks", "settings"], "readonly");
+      const tasksRequest = transaction.objectStore("tasks").getAll();
+      const settingsRequest = transaction.objectStore("settings").get("app");
+      let tasks: Task[] = [];
+      let settings: Settings | undefined;
+      tasksRequest.onsuccess = () => { tasks = (tasksRequest.result ?? []) as Task[]; };
+      settingsRequest.onsuccess = () => { settings = settingsRequest.result as Settings | undefined; };
+      transaction.oncomplete = () => resolve({ tasks, settings });
+      transaction.onerror = () => reject(transaction.error ?? new Error("Failed to read task data"));
+      transaction.onabort = () => reject(transaction.error ?? new Error("Task data transaction aborted"));
+    });
+  } finally {
+    database.close();
+  }
 }
 
 function openNotificationDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(NOTIFIED_DB_NAME, NOTIFIED_DB_VERSION);
+    const request = indexedDB.open(NOTIFICATION_DB_NAME, 1);
     request.onupgradeneeded = () => {
-      const database = request.result;
-      if (!database.objectStoreNames.contains(NOTIFIED_STORE_NAME)) database.createObjectStore(NOTIFIED_STORE_NAME, { keyPath: "key" });
-      if (!database.objectStoreNames.contains(SCHEDULE_STORE_NAME)) database.createObjectStore(SCHEDULE_STORE_NAME, { keyPath: "id" });
+      if (!request.result.objectStoreNames.contains(NOTIFIED_STORE)) {
+        request.result.createObjectStore(NOTIFIED_STORE, { keyPath: "key" });
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error("Failed to open notification database"));
   });
 }
 
-async function loadNotifiedKeys(): Promise<void> {
-  if (notifiedKeysLoaded) return;
+async function getNotifiedKeys(): Promise<Set<string>> {
   const database = await openNotificationDatabase();
   try {
-    const records = await new Promise<Array<{ key: string; createdAt: number }>>((resolve, reject) => {
-      const transaction = database.transaction(NOTIFIED_STORE_NAME, "readonly");
-      const request = transaction.objectStore(NOTIFIED_STORE_NAME).getAll();
-      request.onsuccess = () => resolve(request.result as Array<{ key: string; createdAt: number }>);
-      request.onerror = () => reject(request.error ?? new Error("Failed to load notification keys"));
+    return await new Promise((resolve, reject) => {
+      const request = database.transaction(NOTIFIED_STORE, "readonly").objectStore(NOTIFIED_STORE).getAll();
+      request.onsuccess = () => resolve(new Set((request.result as NotifiedRecord[]).map((item) => item.key)));
+      request.onerror = () => reject(request.error ?? new Error("Failed to read notification history"));
     });
-    const cutoff = Date.now() - NOTIFIED_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-    const freshRecords = records.filter((record) => record.createdAt >= cutoff);
-    notifiedKeys = new Set(freshRecords.map((record) => record.key));
-    const staleKeys = records.filter((record) => record.createdAt < cutoff).map((record) => record.key);
-    if (staleKeys.length) await deleteNotifiedKeys(staleKeys);
-    notifiedKeysLoaded = true;
   } finally {
     database.close();
   }
 }
 
-async function saveNotifiedKey(key: string): Promise<void> {
+async function rememberNotification(key: string): Promise<void> {
   const database = await openNotificationDatabase();
   try {
     await new Promise<void>((resolve, reject) => {
-      const transaction = database.transaction(NOTIFIED_STORE_NAME, "readwrite");
-      transaction.objectStore(NOTIFIED_STORE_NAME).put({ key, createdAt: Date.now() });
+      const transaction = database.transaction(NOTIFIED_STORE, "readwrite");
+      transaction.objectStore(NOTIFIED_STORE).put({ key, createdAt: Date.now() } satisfies NotifiedRecord);
       transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error ?? new Error("Failed to save notification key"));
-      transaction.onabort = () => reject(transaction.error ?? new Error("Notification key transaction aborted"));
+      transaction.onerror = () => reject(transaction.error ?? new Error("Failed to save notification history"));
+      transaction.onabort = () => reject(transaction.error ?? new Error("Notification history transaction aborted"));
     });
   } finally {
     database.close();
   }
 }
 
-async function deleteNotifiedKeys(keys: string[]): Promise<void> {
-  if (!keys.length) return;
-  const database = await openNotificationDatabase();
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const transaction = database.transaction(NOTIFIED_STORE_NAME, "readwrite");
-      const store = transaction.objectStore(NOTIFIED_STORE_NAME);
-      for (const key of keys) store.delete(key);
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error ?? new Error("Failed to delete notification keys"));
-      transaction.onabort = () => reject(transaction.error ?? new Error("Notification key transaction aborted"));
-    });
-  } finally {
-    database.close();
-  }
+function parseTime(value: string): number | null {
+  const [hours, minutes] = value.split(":").map(Number);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  return hours * 60 + minutes;
 }
 
-async function clearAllNotifiedKeys(): Promise<void> {
-  notifiedKeys.clear();
-  const database = await openNotificationDatabase();
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const transaction = database.transaction(NOTIFIED_STORE_NAME, "readwrite");
-      transaction.objectStore(NOTIFIED_STORE_NAME).clear();
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error ?? new Error("Failed to clear notification keys"));
-      transaction.onabort = () => reject(transaction.error ?? new Error("Notification key transaction aborted"));
-    });
-  } finally {
-    database.close();
-  }
+function localDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-async function saveSchedule(nextSchedule: ScheduledNotification[], enabled: boolean): Promise<void> {
-  const database = await openNotificationDatabase();
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const transaction = database.transaction(SCHEDULE_STORE_NAME, "readwrite");
-      const store = transaction.objectStore(SCHEDULE_STORE_NAME);
-      store.clear();
-      store.put({ id: "current", schedule: nextSchedule, enabled });
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error ?? new Error("Failed to save notification schedule"));
-      transaction.onabort = () => reject(transaction.error ?? new Error("Notification schedule transaction aborted"));
-    });
-  } finally {
-    database.close();
-  }
+function notificationKey(taskId: number, date: string, time: string): string {
+  return `${taskId}:${date}:${time}`;
 }
 
-async function loadSchedule(): Promise<void> {
-  if (scheduleLoaded) return;
-  const database = await openNotificationDatabase();
-  try {
-    const record = await new Promise<{ schedule: ScheduledNotification[]; enabled: boolean } | undefined>((resolve, reject) => {
-      const transaction = database.transaction(SCHEDULE_STORE_NAME, "readonly");
-      const request = transaction.objectStore(SCHEDULE_STORE_NAME).get("current");
-      request.onsuccess = () => resolve(request.result as { schedule: ScheduledNotification[]; enabled: boolean } | undefined);
-      request.onerror = () => reject(request.error ?? new Error("Failed to load notification schedule"));
-    });
-    if (record) {
-      schedule = normalizeSchedule(record.schedule);
-      schedulerEnabled = record.enabled;
+function getDueTimes(task: Task, now: Date, minutesBefore: number): string[] {
+  if (!task.id || task.completed) return [];
+
+  const nowWeekMinute = now.getDay() * 1440 + now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const due: string[] = [];
+
+  for (const day of task.scheduledDays) {
+    for (const time of task.scheduledTimes) {
+      const taskMinute = parseTime(time);
+      if (taskMinute === null) continue;
+
+      const notificationMinute = (day * 1440 + taskMinute - minutesBefore + WEEK_MINUTES) % WEEK_MINUTES;
+      const elapsed = (nowWeekMinute - notificationMinute + WEEK_MINUTES) % WEEK_MINUTES;
+      if (elapsed <= LATE_WINDOW_MINUTES) due.push(time);
     }
-    scheduleLoaded = true;
-  } finally {
-    database.close();
   }
+
+  return [...new Set(due)];
 }
 
-async function displayNotification(title: string, body: string, tag?: string): Promise<void> {
-  await self.registration.showNotification(title, {
-    body,
-    icon: getIconUrl(),
-    badge: getIconUrl(),
-    dir: "rtl",
-    lang: "fa",
-    tag: tag ?? `inkarete-${Date.now()}`,
-    silent: false,
-    data: { url: "/" },
-  });
-}
+async function showDueTaskNotifications(): Promise<void> {
+  const { tasks, settings } = await readAppData();
+  if (!settings?.notificationsEnabled) return;
 
-function stopBackgroundChecks(): void {
-  if (!checkInterval) return;
-  clearInterval(checkInterval);
-  checkInterval = null;
-}
+  const minutesBefore = Math.max(0, Number(settings.notificationMinutesBefore) || 0);
+  const now = new Date();
+  const date = localDateKey(now);
+  const notified = await getNotifiedKeys();
 
-function startBackgroundChecks(): void {
-  if (checkInterval) return;
-  void checkDueNotifications();
-  checkInterval = setInterval(() => void checkDueNotifications(), 15000);
-}
+  for (const task of tasks) {
+    if (!task.id) continue;
 
-async function checkDueNotifications(): Promise<void> {
-  if (!schedulerEnabled || !schedule.length || checkInProgress) return;
-  checkInProgress = true;
-  try {
-    await Promise.all([loadNotifiedKeys(), loadSchedule()]);
-    if (!schedulerEnabled || !schedule.length) return;
-    const now = new Date();
-    for (const item of schedule) {
-      if (!isScheduleDue(item, now)) continue;
-      const key = getNotificationKey(item.taskId, item.date, item.time);
-      if (notifiedKeys.has(key)) continue;
-      try {
-        await displayNotification(item.title, getNotificationBody(item.minutesBefore), key);
-        notifiedKeys.add(key);
-        await saveNotifiedKey(key);
-      } catch (error) {
-        console.error("Failed to display scheduled notification:", error);
-      }
+    for (const time of getDueTimes(task, now, minutesBefore)) {
+      const key = notificationKey(task.id, date, time);
+      if (notified.has(key)) continue;
+
+      const body = minutesBefore > 0
+        ? `${minutesBefore} دقیقه تا زمان انجام کار باقی مانده`
+        : "زمان انجام این کار رسیده است";
+
+      await self.registration.showNotification(task.title, {
+        body,
+        icon: new URL(ICON, self.location.origin).href,
+        badge: new URL(ICON, self.location.origin).href,
+        dir: "rtl",
+        lang: "fa",
+        tag: `inkarete-task-${task.id}-${date}-${time}`,
+        data: { url: "/" },
+      });
+
+      await rememberNotification(key);
+      notified.add(key);
     }
-  } finally {
-    checkInProgress = false;
   }
 }
-
-async function restoreScheduler(): Promise<void> {
-  await Promise.all([loadNotifiedKeys(), loadSchedule()]);
-  if (schedulerEnabled && schedule.length) startBackgroundChecks();
-}
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(loadNotifiedKeys().catch((error) => console.error("Failed to initialize notification storage:", error)));
-});
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(restoreScheduler().catch((error) => console.error("Failed to restore notification scheduler:", error)));
-});
 
 self.addEventListener("push", (event) => {
   event.waitUntil((async () => {
-    let payload: { title?: string; body?: string; tag?: string } = {};
+    let payload: { type?: string; title?: string; body?: string; tag?: string } = {};
     try {
       payload = event.data?.json() ?? {};
     } catch {
-      payload = { body: event.data?.text() ?? "" };
+      payload = {};
     }
 
-    await displayNotification(
-      payload.title ?? "این کارته",
-      payload.body ?? "یک اعلان جدید دارید.",
-      payload.tag ?? `inkarete-push-${Date.now()}`,
-    );
+    if (payload.type === "WAKE_UP") {
+      await showDueTaskNotifications();
+      return;
+    }
+
+    await self.registration.showNotification(payload.title ?? "این کارته", {
+      body: payload.body ?? "یک اعلان جدید دارید.",
+      icon: new URL(ICON, self.location.origin).href,
+      badge: new URL(ICON, self.location.origin).href,
+      dir: "rtl",
+      lang: "fa",
+      tag: payload.tag ?? `inkarete-push-${Date.now()}`,
+      data: { url: "/" },
+    });
   })());
-});
-
-self.addEventListener("message", (event: ExtendableMessageEvent) => {
-  const data = event.data as SwMessage | undefined;
-  if (!data?.type) return;
-
-  switch (data.type) {
-    case "SHOW_NOTIFICATION":
-      event.waitUntil(displayNotification(data.title, data.body, data.tag));
-      break;
-    case "UPDATE_SCHEDULE":
-      event.waitUntil((async () => {
-        await loadNotifiedKeys();
-        const nextSchedule = normalizeSchedule(data.schedule);
-        const nextKeys = new Set(nextSchedule.map((item) => getNotificationKey(item.taskId, item.date, item.time)));
-        const keysToDelete = [...notifiedKeys].filter((key) => !nextKeys.has(key));
-        if (keysToDelete.length) {
-          for (const key of keysToDelete) notifiedKeys.delete(key);
-          await deleteNotifiedKeys(keysToDelete);
-        }
-        schedule = nextSchedule;
-        schedulerEnabled = data.enabled;
-        scheduleLoaded = true;
-        await saveSchedule(schedule, schedulerEnabled);
-        if (schedulerEnabled && schedule.length) startBackgroundChecks();
-        else stopBackgroundChecks();
-      })());
-      break;
-    case "START_SCHEDULER":
-      event.waitUntil((async () => {
-        schedulerEnabled = true;
-        scheduleLoaded = true;
-        await saveSchedule(schedule, true);
-        startBackgroundChecks();
-      })());
-      break;
-    case "STOP_SCHEDULER":
-      schedulerEnabled = false;
-      stopBackgroundChecks();
-      event.waitUntil(Promise.all([clearAllNotifiedKeys(), saveSchedule([], false)]));
-      break;
-    default:
-      break;
-  }
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = (event.notification.data?.url as string | undefined) ?? "/";
-  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-    for (const client of clientList) {
-      if ("focus" in client) {
-        void client.focus();
-        return;
-      }
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+    for (const client of clients) {
+      if ("focus" in client) return client.focus();
     }
-    if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
+    return self.clients.openWindow?.(targetUrl);
   }));
 });
 

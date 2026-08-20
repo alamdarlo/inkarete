@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { db, AppSettings } from "@/lib/db";
-import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/timezone";
 
 type SettingsState = AppSettings & {
   initialized: boolean;
@@ -9,9 +8,9 @@ type SettingsState = AppSettings & {
   setWeekDayOrientation: (value: "horizontal" | "vertical") => Promise<void>;
   setShowTaskProgress: (value: boolean) => Promise<void>;
   setShowTaskTimes: (value: boolean) => Promise<void>;
+  setShowCategories: (value: boolean) => Promise<void>;
   setNotificationsEnabled: (value: boolean) => Promise<void>;
   setNotificationMinutesBefore: (value: number) => Promise<void>;
-  setTimeZone: (value: string) => Promise<void>;
 };
 
 const defaultSettings: AppSettings = {
@@ -20,9 +19,9 @@ const defaultSettings: AppSettings = {
   weekDayOrientation: "horizontal",
   showTaskProgress: true,
   showTaskTimes: true,
+  showCategories: true,
   notificationsEnabled: false,
   notificationMinutesBefore: 0,
-  timeZone: DEFAULT_TIME_ZONE,
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -31,17 +30,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   initialize: async () => {
     const saved = await db.settings.get("app");
-
     if (saved) {
-      const timeZone = isValidTimeZone(saved.timeZone)
-        ? saved.timeZone
-        : DEFAULT_TIME_ZONE;
-
-      if (saved.timeZone !== timeZone) {
-        await db.settings.update("app", { timeZone });
-      }
-
-      set({ ...saved, timeZone, initialized: true });
+      set({ ...defaultSettings, ...saved, initialized: true });
       return;
     }
 
@@ -69,6 +59,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     set({ showTaskTimes: value });
   },
 
+  setShowCategories: async (value) => {
+    await db.settings.update("app", { showCategories: value });
+    set({ showCategories: value });
+  },
+
   setNotificationsEnabled: async (value) => {
     await db.settings.update("app", { notificationsEnabled: value });
     set({ notificationsEnabled: value });
@@ -77,14 +72,5 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setNotificationMinutesBefore: async (value) => {
     await db.settings.update("app", { notificationMinutesBefore: value });
     set({ notificationMinutesBefore: value });
-  },
-
-  setTimeZone: async (value) => {
-    if (!isValidTimeZone(value)) {
-      throw new Error(`Invalid time zone: ${value}`);
-    }
-
-    await db.settings.update("app", { timeZone: value });
-    set({ timeZone: value });
   },
 }));

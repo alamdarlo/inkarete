@@ -7,9 +7,9 @@ import { FormControl, InputLabel, MenuItem, Select, Switch } from "@mui/material
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import { useSettingsStore } from "@/store/settingsStore";
-import { showTaskNotification, requestNotificationPermission } from "@/lib/notifications";
+import { showTaskNotification } from "@/lib/notifications";
+import { requestNotificationPermission } from "@/lib/notificationSupport";
 import { subscribeToPush } from "@/lib/push";
-import { TIME_ZONE_OPTIONS } from "@/lib/timezone";
 
 export default function SettingsPage() {
   const {
@@ -17,26 +17,25 @@ export default function SettingsPage() {
     weekDayOrientation,
     showTaskProgress,
     showTaskTimes,
+    showCategories,
     initialize,
     setShowWeekDayTabs,
     setWeekDayOrientation,
     setShowTaskProgress,
     setShowTaskTimes,
+    setShowCategories,
     notificationsEnabled,
     setNotificationsEnabled,
     notificationMinutesBefore,
     setNotificationMinutesBefore,
-    timeZone,
-    setTimeZone,
   } = useSettingsStore();
 
   useEffect(() => {
-    initialize();
+    void initialize();
   }, [initialize]);
 
   const enableNotifications = async () => {
     const permission = await requestNotificationPermission();
-
     if (permission !== "granted") {
       await setNotificationsEnabled(false);
       return;
@@ -83,16 +82,10 @@ export default function SettingsPage() {
             <div><div className="text-sm">نمایش زمان کارها</div><div className="mt-0.5 text-xs text-slate-400">نمایش ساعت تعیین‌شده برای هر کار</div></div>
             <Switch checked={showTaskTimes} onChange={(event) => setShowTaskTimes(event.target.checked)} />
           </div>
-        </section>
-
-        <section className="mb-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <div className="mb-3"><div className="text-sm font-bold">منطقه زمانی</div><div className="mt-1 text-xs text-slate-400">ساعت و روزهای اعلان‌ها بر اساس این منطقه زمانی محاسبه می‌شود.</div></div>
-          <FormControl fullWidth size="small">
-            <InputLabel id="time-zone-label">منطقه زمانی</InputLabel>
-            <Select labelId="time-zone-label" value={timeZone} label="منطقه زمانی" onChange={(event) => setTimeZone(event.target.value)}>
-              {TIME_ZONE_OPTIONS.map((option) => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
-            </Select>
-          </FormControl>
+          <div className="flex items-center justify-between border-t border-slate-100 py-2 dark:border-slate-700">
+            <div><div className="text-sm">نمایش دسته‌بندی‌ها</div><div className="mt-0.5 text-xs text-slate-400">نمایش انتخاب دسته‌بندی هنگام ایجاد کار و دسته‌بندی روی کارها</div></div>
+            <Switch checked={showCategories} onChange={(event) => setShowCategories(event.target.checked)} />
+          </div>
         </section>
 
         <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
