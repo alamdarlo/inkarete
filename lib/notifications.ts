@@ -1,5 +1,3 @@
-import { getServiceWorkerRegistration } from "@/lib/notificationServiceWorker";
-
 const DEFAULT_ICON = "/icons/icon-192.png";
 
 function buildNotificationOptions(body: string, tag?: string): NotificationOptions {
@@ -20,19 +18,17 @@ export async function showTaskNotification(
   body: string,
   tag?: string,
 ): Promise<boolean> {
-  if (typeof window === "undefined" || !("Notification" in window)) {
-    return false;
-  }
-
-  if (Notification.permission !== "granted") {
-    return false;
-  }
-
-  const registration = await getServiceWorkerRegistration();
-  if (!registration) return false;
+  if (typeof window === "undefined" || !("Notification" in window)) return false;
+  if (Notification.permission !== "granted") return false;
 
   try {
-    await registration.showNotification(title, buildNotificationOptions(body, tag));
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(title, buildNotificationOptions(body, tag));
+      return true;
+    }
+
+    new Notification(title, buildNotificationOptions(body, tag));
     return true;
   } catch (error) {
     console.error("Notification failed:", error);
