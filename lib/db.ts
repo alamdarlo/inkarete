@@ -1,7 +1,5 @@
 import Dexie, { Table } from "dexie";
 
-export type Priority = "low" | "medium" | "high";
-
 export type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type TaskSchedule = {
@@ -53,7 +51,6 @@ export type AppSettings = {
   showTaskTimes: boolean;
   notificationsEnabled: boolean;
   notificationMinutesBefore: number;
-  timeZone: string;
 };
 
 export class AppDatabase extends Dexie {
@@ -84,7 +81,30 @@ export class AppDatabase extends Dexie {
           .table<AppSettings, string>("settings")
           .toCollection()
           .modify((settings) => {
-            settings.timeZone ??= "Asia/Tehran";
+            delete (settings as AppSettings & { timeZone?: string }).timeZone;
+          });
+      });
+
+    this.version(5)
+      .stores({
+        tasks: "++id, completed, createdAt, order",
+        history: "++id, action, createdAt, taskId",
+        categories: "++id, name, createdAt",
+        settings: "id",
+      })
+      .upgrade(async (transaction) => {
+        await transaction
+          .table("tasks")
+          .toCollection()
+          .modify((task) => {
+            delete task.priority;
+          });
+
+        await transaction
+          .table("settings")
+          .toCollection()
+          .modify((settings) => {
+            delete settings.timeZone;
           });
       });
 
