@@ -1,12 +1,11 @@
-"use client";
-
 import { db } from "@/lib/db";
-import { postMessageToServiceWorker } from "@/lib/notifications";
+import { postMessageToServiceWorker } from "@/lib/notificationServiceWorker";
 import { computeUpcomingSchedule } from "@/lib/notificationSchedule";
 
-export async function syncNotificationSchedule() {
-  const settings = await db.settings.get("app");
+const SCHEDULE_DAYS = 30;
 
+export async function syncNotificationSchedule(): Promise<void> {
+  const settings = await db.settings.get("app");
   if (!settings) return;
 
   if (!settings.notificationsEnabled) {
@@ -18,7 +17,7 @@ export async function syncNotificationSchedule() {
   const schedule = computeUpcomingSchedule(
     tasks,
     settings.notificationMinutesBefore,
-    30,
+    SCHEDULE_DAYS,
     settings.timeZone,
   );
 
