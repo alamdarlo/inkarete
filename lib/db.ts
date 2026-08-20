@@ -121,7 +121,7 @@ export class AppDatabase extends Dexie {
           .table<AppSettings, string>("settings")
           .toCollection()
           .modify((settings) => {
-            settings.showCategories = true;
+            settings.showCategories = false;
           });
       });
 
