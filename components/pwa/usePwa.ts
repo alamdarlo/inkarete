@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { BeforeInstallPromptEvent, PwaContextType } from "./types";
-import { PWA_INSTALL_SEEN_KEY } from "./constants";
+import { PWA_INSTALL_SEEN_KEY, PWA_INSTALLED_KEY } from "./constants";
 
 export function usePwa(): PwaContextType {
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
@@ -28,36 +28,46 @@ export function usePwa(): PwaContextType {
     setIsDesktop(desktop);
     setIsInstalled(standalone);
 
-    if (standalone || localStorage.getItem(PWA_INSTALL_SEEN_KEY) === "1") {
+    const wasInstalled = localStorage.getItem(PWA_INSTALLED_KEY) === "1";
+    if (standalone) {
+      localStorage.setItem(PWA_INSTALLED_KEY, "1");
       return;
     }
 
-    const markInstallSeen = () => {
-      localStorage.setItem(PWA_INSTALL_SEEN_KEY, "1");
-    };
-
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
+
+      // If the app was installed before, receiving this event means the
+      // browser considers it installable again (for example after uninstall).
+      if (wasInstalled) {
+        localStorage.removeItem(PWA_INSTALLED_KEY);
+        localStorage.removeItem(PWA_INSTALL_SEEN_KEY);
+      }
+
+      if (localStorage.getItem(PWA_INSTALL_SEEN_KEY) === "1") {
+        return;
+      }
+
       setPromptEvent(event as BeforeInstallPromptEvent);
       setCanInstall(true);
       setShowBanner(true);
     };
 
     const handleInstalled = () => {
-      markInstallSeen();
+      localStorage.setItem(PWA_INSTALLED_KEY, "1");
+      localStorage.setItem(PWA_INSTALL_SEEN_KEY, "1");
       setIsInstalled(true);
       setPromptEvent(null);
       setCanInstall(false);
       setShowBanner(false);
     };
 
-    if (ios) {
-      markInstallSeen();
-      setShowBanner(true);
-    }
-
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleInstalled);
+
+    if (ios && localStorage.getItem(PWA_INSTALL_SEEN_KEY) !== "1") {
+      setShowBanner(true);
+    }
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -76,6 +86,7 @@ export function usePwa(): PwaContextType {
     setShowBanner(false);
 
     if (result.outcome === "accepted") {
+      localStorage.setItem(PWA_INSTALLED_KEY, "1");
       localStorage.setItem(PWA_INSTALL_SEEN_KEY, "1");
       setIsInstalled(true);
     }
