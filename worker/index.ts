@@ -253,14 +253,6 @@ self.addEventListener("message", (event: ExtendableMessageEvent) => {
         else stopBackgroundChecks();
       })());
       break;
-    case "START_SCHEDULER":
-      event.waitUntil((async () => {
-        schedulerEnabled = true;
-        scheduleLoaded = true;
-        await saveSchedule(schedule, true);
-        startBackgroundChecks();
-      })());
-      break;
     case "STOP_SCHEDULER":
       schedulerEnabled = false;
       stopBackgroundChecks();
