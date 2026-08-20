@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendPushNotification, type PushSubscriptionPayload } from "@/lib/server/push";
-import { savePushSubscription } from "@/lib/server/pushStore";
+import { removePushSubscription, savePushSubscription } from "@/lib/server/pushStore";
 
 export async function POST(request: Request) {
   try {
@@ -12,12 +12,23 @@ export async function POST(request: Request) {
 
     await savePushSubscription(body);
 
-    await sendPushNotification(body, {
-      type: "TEST_NOTIFICATION",
-      title: "این کارته",
-      body: "Web Push با موفقیت به دستگاه شما رسید.",
-      tag: "inkarete-web-push-test",
-    });
+    try {
+      await sendPushNotification(body, {
+        type: "TEST_NOTIFICATION",
+        title: "این کارته",
+        body: "Web Push با موفقیت به دستگاه شما رسید.",
+        tag: "inkarete-web-push-test",
+      });
+    } catch (error) {
+      const statusCode = (error as { statusCode?: number }).statusCode;
+
+      if (statusCode === 404 || statusCode === 410) {
+        await removePushSubscription(body.endpoint);
+        return NextResponse.json({ error: "Push subscription is no longer valid" }, { status: 410 });
+      }
+
+      throw error;
+    }
 
     return NextResponse.json({ ok: true, testPushSent: true });
   } catch (error) {
