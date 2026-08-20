@@ -60,8 +60,14 @@
 
 ## PWA install rules
 
-- install prompt فقط یک بار persist شود.
-- بعد از `appinstalled` یا قبول نصب، refresh/navigation نباید prompt را دوباره نشان دهد.
+- وضعیت install prompt باید در Zustand مدیریت شود؛ localStorage فقط persistence بین refreshها را فراهم کند.
+- navigation بین صفحات نباید باعث نمایش دوباره prompt شود.
+- `beforeinstallprompt` سیگنال قابل نصب بودن در مرورگرهای پشتیبان است.
+- `display-mode: standalone` و `navigator.standalone` برای تشخیص اجرای نصب‌شده استفاده شوند.
+- `appinstalled` وضعیت نصب را ثبت کند.
+- اگر برنامه uninstall شد و browser دوباره `beforeinstallprompt` داد، state قدیمی install/seen باید قابل reset باشد تا prompt دوباره امکان نمایش داشته باشد.
+- «بعداً» نباید فقط در state محلی component کنترل شود؛ باید در store/persistence ثبت شود.
+- state مربوط به PWA نباید داخل `page.tsx` پخش شود؛ منطق آن در `components/pwa` و store مربوط به PWA بماند.
 
 ## Maintainability
 
@@ -72,6 +78,7 @@
 - local notification
 - push subscription
 - scheduling
+- PWA install state
 
 از duplicate logic، state سراسری غیرضروری و helperهای مشابه خودداری کن.
 
@@ -87,8 +94,9 @@
 6. reminder کمتر از پنجره wake-up از دست نرود.
 7. duplicate notification ایجاد نشود.
 8. ساعت دستی دستگاه رفتار مورد انتظار را داشته باشد.
-9. install prompt بعد از نصب دوباره ظاهر نشود.
+9. install prompt بعد از نصب، refresh و navigation دوباره ظاهر نشود.
+10. بعد از uninstall و بازگشت به browser، در صورت دریافت `beforeinstallprompt` امکان نصب دوباره وجود داشته باشد.
 
 ## Documentation rule
 
-اگر معماری notification، storage، deployment، GitHub Actions یا environmentها تغییر کرد، `ARCHITECTURE.md` را در همان change به‌روزرسانی کن.
+اگر معماری notification، PWA، storage، deployment، GitHub Actions یا environmentها تغییر کرد، `ARCHITECTURE.md` را در همان change به‌روزرسانی کن.
