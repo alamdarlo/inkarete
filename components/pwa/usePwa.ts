@@ -32,19 +32,19 @@ export function usePwa(): PwaContextType {
       return;
     }
 
-    const markInstallPromptSeen = () => {
+    const markInstallSeen = () => {
       localStorage.setItem(PWA_INSTALL_SEEN_KEY, "1");
     };
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
-      markInstallPromptSeen();
       setPromptEvent(event as BeforeInstallPromptEvent);
       setCanInstall(true);
       setShowBanner(true);
     };
 
     const handleInstalled = () => {
+      markInstallSeen();
       setIsInstalled(true);
       setPromptEvent(null);
       setCanInstall(false);
@@ -52,7 +52,7 @@ export function usePwa(): PwaContextType {
     };
 
     if (ios) {
-      markInstallPromptSeen();
+      markInstallSeen();
       setShowBanner(true);
     }
 
@@ -76,6 +76,7 @@ export function usePwa(): PwaContextType {
     setShowBanner(false);
 
     if (result.outcome === "accepted") {
+      localStorage.setItem(PWA_INSTALL_SEEN_KEY, "1");
       setIsInstalled(true);
     }
   }, [promptEvent]);
