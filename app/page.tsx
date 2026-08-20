@@ -12,16 +12,13 @@ import ScheduleSelect from "@/components/tasks/ScheduleSelect";
 import TimeSelect from "@/components/tasks/TimeSelect";
 import WeekDayTabs from "@/components/tasks/WeekDayTabs";
 import NotificationScheduler from "@/components/notifications/NotificationScheduler";
-import { syncNotificationSchedule } from "@/lib/notificationSync";
+import { getWeekDayInTimeZone } from "@/lib/timezone";
 import { useSettingsStore } from "@/store/settingsStore";
 
-function getTodayIndex(): WeekDay {
-  const day = new Date().getDay();
-  return day === 6 ? 0 : (day + 1) as WeekDay;
-}
-
 export default function Home() {
-  const todayIndex = getTodayIndex();
+  const timeZone = useSettingsStore((state) => state.timeZone);
+  const todayIndex: WeekDay = getWeekDayInTimeZone(new Date(), timeZone);
+
   const [task, setTask] = useState("");
   const [categoryId, setCategoryId] = useState(0);
   const [scheduledDays, setScheduledDays] = useState<WeekDay[]>([todayIndex]);
@@ -86,7 +83,6 @@ export default function Home() {
     });
 
     await addHistory(id, title, "created");
-    await syncNotificationSchedule();
 
     setTask("");
     setScheduledDays([todayIndex]);
@@ -105,8 +101,6 @@ export default function Home() {
     if (completed) {
       await addHistory(item.id, item.title, "completed");
     }
-
-    await syncNotificationSchedule();
   };
 
   const deleteTask = async (item: Task) => {
@@ -114,7 +108,6 @@ export default function Home() {
 
     await addHistory(item.id, item.title, "deleted");
     await db.tasks.delete(item.id);
-    await syncNotificationSchedule();
   };
 
   const reorderTasks = async (activeId: number, overId: number) => {
