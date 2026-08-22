@@ -36,6 +36,10 @@ function normalizeSubscriber(subscription: PushSubscriptionPayload | PushSubscri
   };
 }
 
+async function saveSubscriber(subscriber: PushSubscriber): Promise<void> {
+  await redis.hset(SUBSCRIPTION_KEY, { [subscriber.endpoint]: JSON.stringify(subscriber) });
+}
+
 export async function savePushSubscription(subscription: PushSubscriptionPayload): Promise<PushSubscriber> {
   const existing = await redis.hget<string>(SUBSCRIPTION_KEY, subscription.endpoint);
   const current = existing ? (JSON.parse(existing) as PushSubscriber) : undefined;
@@ -51,7 +55,7 @@ export async function savePushSubscription(subscription: PushSubscriptionPayload
     lastSeenAt: now,
   });
 
-  await redis.hset(SUBSCRIPTION_KEY, { [subscriber.endpoint]: JSON.stringify(subscriber) });
+  await saveSubscriber(subscriber);
   return subscriber;
 }
 
@@ -74,32 +78,22 @@ export async function setPushNotificationEnabled(endpoint: string, enabled: bool
 
   subscriber.notificationEnabled = enabled;
   subscriber.lastSeenAt = Date.now();
-  await redis.hset(SUBSCRIPTION_KEY, { [endpoint]: JSON.stringify(subscriber) });
+  await saveSubscriber(subscriber);
   return true;
 }
 
-export async function markPushAttempt(endpoint: string): Promise<void> {
-  const subscriber = await getPushSubscriber(endpoint);
-  if (!subscriber) return;
-
-  subscriber.lastPushAt = Date.now();
-  await redis.hset(SUBSCRIPTION_KEY, { [endpoint]: JSON.stringify(subscriber) });
-}
-
-export async function markPushSuccess(endpoint: string): Promise<void> {
-  const subscriber = await getPushSubscriber(endpoint);
-  if (!subscriber) return;
-
+export async function recordPushSuccess(subscriber: PushSubscriber): Promise<void> {
+  const now = Date.now();
   subscriber.subscriptionStatus = "active";
-  subscriber.lastPushSuccessAt = Date.now();
-  await redis.hset(SUBSCRIPTION_KEY, { [endpoint]: JSON.stringify(subscriber) });
+  subscriber.lastPushAt = now;
+  subscriber.lastPushSuccessAt = now;
+  await saveSubscriber(subscriber);
 }
 
-export async function markPushFailure(endpoint: string, invalid: boolean): Promise<void> {
-  const subscriber = await getPushSubscriber(endpoint);
-  if (!subscriber) return;
-
+export async function recordPushFailure(subscriber: PushSubscriber, invalid: boolean): Promise<void> {
+  const now = Date.now();
   subscriber.subscriptionStatus = invalid ? "invalid" : "unknown";
-  subscriber.lastPushFailureAt = Date.now();
-  await redis.hset(SUBSCRIPTION_KEY, { [endpoint]: JSON.stringify(subscriber) });
+  subscriber.lastPushAt = now;
+  subscriber.lastPushFailureAt = now;
+  await saveSubscriber(subscriber);
 }

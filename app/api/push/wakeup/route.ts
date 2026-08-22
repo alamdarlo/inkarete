@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { sendPushNotification } from "@/lib/server/push";
 import {
   getPushSubscribers,
-  markPushAttempt,
-  markPushFailure,
-  markPushSuccess,
+  recordPushFailure,
+  recordPushSuccess,
 } from "@/lib/server/pushStore";
 
 export const runtime = "nodejs";
@@ -39,16 +38,15 @@ export async function GET(request: Request) {
     }
 
     result.attempted += 1;
-    await markPushAttempt(subscriber.endpoint);
 
     try {
       await sendPushNotification(subscriber, { type: "WAKE_UP" }, { TTL: 600 });
-      await markPushSuccess(subscriber.endpoint);
+      await recordPushSuccess(subscriber);
       result.sent += 1;
     } catch (error) {
       const statusCode = (error as { statusCode?: number }).statusCode;
       const invalid = statusCode === 404 || statusCode === 410;
-      await markPushFailure(subscriber.endpoint, invalid);
+      await recordPushFailure(subscriber, invalid);
       if (invalid) result.invalid += 1;
       console.error("Push wake-up failed:", error);
     }
