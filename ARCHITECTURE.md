@@ -4,7 +4,7 @@
 
 ## وضعیت فعلی
 
-- Branch اصلی این refactor: `refactor/notification-simplification`
+- Branch اصلی این refactor: `feature/subscriber-management`
 - Build فعلی: موفق
 - Preview Vercel: تست شده و موفق
 - هدف refactor: ساده‌سازی notification subsystem، حذف timezone تنظیم‌شدنی، حذف باقی‌مانده‌های priority و قابل‌اعتماد کردن notification روی موبایل/PWA.
