@@ -66,6 +66,10 @@ export async function getPushSubscribers(): Promise<PushSubscriber[]> {
   return Object.values(values).map((value) => normalizeSubscriber(JSON.parse(value) as PushSubscriber));
 }
 
+export async function getPushSubscriberCount(): Promise<number> {
+  return redis.hlen(SUBSCRIPTION_KEY);
+}
+
 export async function getPushSubscriber(endpoint: string): Promise<PushSubscriber | null> {
   const value = await redis.hget<string>(SUBSCRIPTION_KEY, endpoint);
   if (!value) return null;
