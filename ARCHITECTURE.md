@@ -22,7 +22,7 @@ GitHub Actions (~5 min wake-up)
 Vercel API / push wake-up
         |
         v
-Redis -> active Web Push subscriptions
+Redis -> Web Push subscribers
         |
         v
 Web Push -> Service Worker on device
@@ -124,7 +124,7 @@ Web Push با VAPID کار می‌کند:
 
 - VAPID public key: client-side برای subscription
 - VAPID private key: فقط server-side
-- subscriptionهای فعال در Redis نگهداری می‌شوند.
+- subscriptionهای Web Push در Redis نگهداری می‌شوند و به‌خاطر قطع موقت اینترنت حذف نمی‌شوند.
 
 ### Secret مربوط به wake-up
 
@@ -135,7 +135,7 @@ Vercel:
 PUSH_WAKEUP_SECRET
 
 GitHub Actions:
-INKARETE_APP_URL
+APP_URL
 PUSH_WAKEUP_SECRET
 ```
 
@@ -203,6 +203,7 @@ Feature `priority` عمداً از پروژه حذف شده است.
 - تفکیک `notificationEnabled` از `subscriptionStatus`
 - ثبت زمان‌های lifecycle مربوط به Subscriber
 - همگام‌سازی خاموش/روشن کردن Notification از Settings با Subscriber سمت server
+- اضافه شدن پنل عمومی مدیریت Subscriberها برای تست اولیه
 
 ### قبل از merge نهایی باید بررسی شود
 
@@ -213,10 +214,10 @@ Feature `priority` عمداً از پروژه حذف شده است.
 - تغییر/حذف task بعد از ایجاد subscription
 - رفتار با ساعت دستی دستگاه
 - مدیریت Subscriberهای `invalid` بدون حذف از Redis
-- پاک شدن Subscriptionهای نامعتبر از Redis **انجام نمی‌شود** و باید مدیریت lifecycle جداگانه داشته باشد.
 - بررسی نهایی Service Worker روی Android/iOS
 - تست خاموش/روشن کردن category visibility و taskهای دارای/فاقد category
 - تست خاموش کردن Notification از Settings و اطمینان از skip شدن wake-up برای آن Subscriber
+- بررسی و رفع مشکل فعلی ثبت نشدن Subscriber در Redis در محیط Vercel/Upstash
 
 ## قانون برای refactorهای بعدی
 
