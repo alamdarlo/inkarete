@@ -16,6 +16,16 @@ function urlBase64ToArrayBuffer(value: string): ArrayBuffer {
   return buffer;
 }
 
+async function syncPushPreference(endpoint: string, enabled: boolean): Promise<boolean> {
+  const response = await fetch("/api/push/preferences", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint, enabled }),
+  });
+
+  return response.ok;
+}
+
 export async function subscribeToPush(): Promise<boolean> {
   if (!VAPID_PUBLIC_KEY || typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
     return false;
@@ -38,4 +48,16 @@ export async function subscribeToPush(): Promise<boolean> {
   });
 
   return response.ok;
+}
+
+export async function setPushNotificationPreference(enabled: boolean): Promise<boolean> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    return false;
+  }
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription) return false;
+
+  return syncPushPreference(subscription.endpoint, enabled);
 }

@@ -44,6 +44,28 @@ Web Push فقط یک **wake-up signal** است. Push نباید schedule کام�
 
 این طراحی عمداً به `setInterval` داخل `page.tsx` وابسته نیست، چون صفحه ممکن است روی موبایل بسته یا suspend شود.
 
+## Subscriber management
+
+Redis منبع persistence برای Web Push Subscriberها است و Subscriber نباید صرفاً به خاطر عدم دریافت موقت Push حذف شود.
+
+هر Subscriber علاوه بر Web Push subscription این وضعیت‌ها را دارد:
+
+- `notificationEnabled`: ترجیح کاربر در خود برنامه؛ خاموش کردن آن Subscriber را حذف نمی‌کند.
+- `subscriptionStatus`: یکی از `active`, `unknown`, `invalid`.
+- `createdAt`
+- `lastSeenAt`
+- `lastPushAt`
+- `lastPushSuccessAt`
+- `lastPushFailureAt`
+
+قطع اینترنت، خاموش بودن گوشی یا suspend بودن مرورگر به‌تنهایی به معنی inactive بودن Subscriber نیست. در این حالت وضعیت می‌تواند `unknown` بماند.
+
+خطای `404` یا `410` از Web Push به معنی نامعتبر شدن Subscription است؛ Subscriber در Redis باقی می‌ماند و فقط `subscriptionStatus = invalid` می‌شود تا بعداً قابل مدیریت و بررسی باشد.
+
+`notificationEnabled` و اعتبار Web Push عمداً دو مفهوم جدا هستند. کاربر می‌تواند Notification را از Settings برنامه خاموش کند، بدون اینکه Subscription حذف شود. Wake-up endpoint Subscriberهای خاموش یا نامعتبر را skip می‌کند.
+
+مرورگر/سیستم‌عامل ممکن است permission اعلان را خارج از برنامه تغییر دهد. server نمی‌تواند همیشه این تغییر را به‌صورت مستقیم تشخیص دهد؛ وقتی کاربر دوباره برنامه را باز کند، وضعیت permission و Subscription دوباره synchronize می‌شود.
+
 ## Timezone
 
 Timezone قابل تنظیم توسط کاربر حذف شده است.
@@ -156,6 +178,7 @@ Feature `priority` عمداً از پروژه حذف شده است.
 - `lib/notifications.ts` — permission/local notification/Push helpers.
 - Service Worker / `worker/` — محل بررسی schedule و نمایش notification در background.
 - APIهای `app/api/push/*` — subscription و wake-up server endpoints.
+- `lib/server/pushStore.ts` — persistence و lifecycle Subscriberها در Redis.
 - `store/settingsStore.ts` — settings بدون timezone و با `showCategories`.
 - `.github/workflows/*` — CI و wake-up cron.
 - Vercel environment — Redis، VAPID و `PUSH_WAKEUP_SECRET`.
@@ -176,6 +199,10 @@ Feature `priority` عمداً از پروژه حذف شده است.
 - حفظ categoryهای قبلی هنگام خاموش کردن انتخاب category
 - build موفق در CI و Vercel
 - Preview تست شده
+- نگه‌داشتن Subscriberها در Redis به‌جای حذف در خطای `404/410`
+- تفکیک `notificationEnabled` از `subscriptionStatus`
+- ثبت زمان‌های lifecycle مربوط به Subscriber
+- همگام‌سازی خاموش/روشن کردن Notification از Settings با Subscriber سمت server
 
 ### قبل از merge نهایی باید بررسی شود
 
@@ -185,9 +212,11 @@ Feature `priority` عمداً از پروژه حذف شده است.
 - جلوگیری از duplicate notification
 - تغییر/حذف task بعد از ایجاد subscription
 - رفتار با ساعت دستی دستگاه
-- پاک شدن subscriptionهای نامعتبر از Redis
+- مدیریت Subscriberهای `invalid` بدون حذف از Redis
+- پاک شدن Subscriptionهای نامعتبر از Redis **انجام نمی‌شود** و باید مدیریت lifecycle جداگانه داشته باشد.
 - بررسی نهایی Service Worker روی Android/iOS
 - تست خاموش/روشن کردن category visibility و taskهای دارای/فاقد category
+- تست خاموش کردن Notification از Settings و اطمینان از skip شدن wake-up برای آن Subscriber
 
 ## قانون برای refactorهای بعدی
 
