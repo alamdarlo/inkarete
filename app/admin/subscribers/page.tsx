@@ -20,14 +20,8 @@ type Subscriber = {
   lastPushFailureAt: number | null;
 };
 
-type TestResult = {
-  total: number;
-  attempted: number;
-  sent: number;
-  skippedDisabled: number;
-  invalid: number;
-  failed: number;
-};
+type AdminResponse = { redisCount: number; subscribers: Subscriber[] };
+type TestResult = { total: number; attempted: number; sent: number; skippedDisabled: number; invalid: number; failed: number };
 
 function formatDate(value: number | null) {
   if (!value) return "—";
@@ -44,6 +38,7 @@ function endpointLabel(endpoint: string) {
 
 export default function SubscribersAdminPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [redisCount, setRedisCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState("");
@@ -55,8 +50,9 @@ export default function SubscribersAdminPage() {
     try {
       const response = await fetch("/api/admin/subscribers", { cache: "no-store" });
       if (!response.ok) throw new Error("خطا در دریافت Subscriberها");
-      const data = (await response.json()) as { subscribers: Subscriber[] };
+      const data = (await response.json()) as AdminResponse;
       setSubscribers(data.subscribers);
+      setRedisCount(data.redisCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : "خطای نامشخص");
     } finally {
@@ -114,8 +110,9 @@ export default function SubscribersAdminPage() {
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          <Stat label="کل" value={stats.total} />
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
+          <Stat label="کل Redis" value={redisCount} />
+          <Stat label="نمایش داده‌شده" value={stats.total} />
           <Stat label="اعلان روشن" value={stats.enabled} />
           <Stat label="اعلان خاموش" value={stats.disabled} />
           <Stat label="Active" value={stats.active} />
@@ -123,6 +120,7 @@ export default function SubscribersAdminPage() {
           <Stat label="Invalid" value={stats.invalid} />
         </div>
 
+        {redisCount !== subscribers.length && !loading && <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">هشدار: تعداد رکوردهای Redis ({redisCount}) با تعداد Subscriberهای خوانده‌شده ({subscribers.length}) یکسان نیست.</div>}
         {testResult && <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">ارسال تست انجام شد: {testResult.sent} ارسال موفق، {testResult.failed} ناموفق، {testResult.skippedDisabled} خاموش و {testResult.invalid} نامعتبر.</div>}
         {error && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">{error}</div>}
 
