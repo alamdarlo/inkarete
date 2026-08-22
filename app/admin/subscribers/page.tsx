@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import HelpIcon from "@mui/icons-material/Help";
+import ErrorIcon from "@mui/icons-material/Error";
 
 type Subscriber = {
   endpoint: string;
@@ -113,9 +113,7 @@ export default function SubscribersAdminPage() {
                         <span>آخرین موفق: {formatDate(subscriber.lastPushSuccessAt)}</span>
                       </div>
                     </div>
-                    <div className="text-[11px] text-slate-400 lg:text-left">
-                      آخرین خطا: {formatDate(subscriber.lastPushFailureAt)}
-                    </div>
+                    <div className="text-[11px] text-slate-400 lg:text-left">آخرین خطا: {formatDate(subscriber.lastPushFailureAt)}</div>
                   </div>
                 </article>
               ))}
@@ -135,9 +133,9 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 function StatusBadge({ status }: { status: Subscriber["subscriptionStatus"] }) {
   const config = {
-    active: { label: "Active", icon: CheckCircleOutlineIcon, className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
-    unknown: { label: "Unknown", icon: HelpOutlineIcon, className: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
-    invalid: { label: "Invalid", icon: ErrorOutlineIcon, className: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
+    active: { label: "Active", icon: CheckCircleIcon, className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+    unknown: { label: "Unknown", icon: HelpIcon, className: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
+    invalid: { label: "Invalid", icon: ErrorIcon, className: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
   }[status];
   const Icon = config.icon;
   return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] ${config.className}`}><Icon sx={{ fontSize: 14 }} />{config.label}</span>;
