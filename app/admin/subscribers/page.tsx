@@ -7,6 +7,7 @@ import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HelpIcon from "@mui/icons-material/Help";
 import ErrorIcon from "@mui/icons-material/Error";
+import SendIcon from "@mui/icons-material/Send";
 
 type Subscriber = {
   endpoint: string;
@@ -17,6 +18,15 @@ type Subscriber = {
   lastPushAt: number | null;
   lastPushSuccessAt: number | null;
   lastPushFailureAt: number | null;
+};
+
+type TestResult = {
+  total: number;
+  attempted: number;
+  sent: number;
+  skippedDisabled: number;
+  invalid: number;
+  failed: number;
 };
 
 function formatDate(value: number | null) {
@@ -35,7 +45,9 @@ function endpointLabel(endpoint: string) {
 export default function SubscribersAdminPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
+  const [testing, setTesting] = useState(false);
   const [error, setError] = useState("");
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
 
   const loadSubscribers = useCallback(async () => {
     setLoading(true);
@@ -56,6 +68,23 @@ export default function SubscribersAdminPage() {
     void loadSubscribers();
   }, [loadSubscribers]);
 
+  async function sendTestPush() {
+    setTesting(true);
+    setError("");
+    setTestResult(null);
+    try {
+      const response = await fetch("/api/admin/subscribers/test", { method: "POST" });
+      const data = (await response.json()) as TestResult & { error?: string };
+      if (!response.ok) throw new Error(data.error || "ارسال اعلان تستی ناموفق بود");
+      setTestResult(data);
+      await loadSubscribers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "خطای نامشخص");
+    } finally {
+      setTesting(false);
+    }
+  }
+
   const stats = useMemo(() => ({
     total: subscribers.length,
     enabled: subscribers.filter((item) => item.notificationEnabled).length,
@@ -68,15 +97,21 @@ export default function SubscribersAdminPage() {
   return (
     <main dir="rtl" className="min-h-screen bg-slate-100 px-3 py-4 text-slate-800 dark:bg-slate-900 dark:text-slate-100 sm:px-5">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-lg font-bold">مدیریت Subscriberها</h1>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">وضعیت Web Push و چرخه عمر Subscriberها</p>
           </div>
-          <button type="button" onClick={() => void loadSubscribers()} disabled={loading} className="flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
-            <RefreshIcon fontSize="small" />
-            بروزرسانی
-          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => void sendTestPush()} disabled={testing || loading || subscribers.length === 0} className="flex h-9 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-xs text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
+              <SendIcon fontSize="small" />
+              {testing ? "در حال ارسال..." : "ارسال تست به همه"}
+            </button>
+            <button type="button" onClick={() => void loadSubscribers()} disabled={loading || testing} className="flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+              <RefreshIcon fontSize="small" />
+              بروزرسانی
+            </button>
+          </div>
         </div>
 
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
@@ -88,6 +123,7 @@ export default function SubscribersAdminPage() {
           <Stat label="Invalid" value={stats.invalid} />
         </div>
 
+        {testResult && <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">ارسال تست انجام شد: {testResult.sent} ارسال موفق، {testResult.failed} ناموفق، {testResult.skippedDisabled} خاموش و {testResult.invalid} نامعتبر.</div>}
         {error && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">{error}</div>}
 
         <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
