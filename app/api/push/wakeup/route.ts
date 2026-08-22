@@ -5,6 +5,7 @@ import {
   recordPushFailure,
   recordPushSuccess,
 } from "@/lib/server/pushStore";
+import { getPushSubscriptions, removePushSubscription } from "@/lib/server/pushStore";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,8 @@ type WakeupResult = {
   sent: number;
   skippedDisabled: number;
   invalid: number;
+  sent: number;
+  removed: number;
 };
 
 export async function GET(request: Request) {
@@ -48,6 +51,21 @@ export async function GET(request: Request) {
       const invalid = statusCode === 404 || statusCode === 410;
       await recordPushFailure(subscriber, invalid);
       if (invalid) result.invalid += 1;
+  const result: WakeupResult = { sent: 0, removed: 0 };
+  const subscriptions = await getPushSubscriptions();
+
+  await Promise.all(subscriptions.map(async (subscription) => {
+    try {
+      await sendPushNotification(subscription, { type: "WAKE_UP" }, { TTL: 600 });
+      result.sent += 1;
+    } catch (error) {
+      const statusCode = (error as { statusCode?: number }).statusCode;
+      if (statusCode === 404 || statusCode === 410) {
+        await removePushSubscription(subscription.endpoint);
+        result.removed += 1;
+        return;
+      }
+
       console.error("Push wake-up failed:", error);
     }
   }));

@@ -10,6 +10,7 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { showTaskNotification } from "@/lib/notifications";
 import { requestNotificationPermission } from "@/lib/notificationSupport";
 import { setPushNotificationPreference, subscribeToPush } from "@/lib/push";
+import { subscribeToPush } from "@/lib/push";
 
 export default function SettingsPage() {
   const {

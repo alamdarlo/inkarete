@@ -4,7 +4,6 @@
 
 ## وضعیت فعلی
 
-- Branch اصلی این refactor: `feature/subscriber-management`
 - Build فعلی: موفق
 - Preview Vercel: تست شده و موفق
 - هدف refactor: ساده‌سازی notification subsystem، حذف timezone تنظیم‌شدنی، حذف باقی‌مانده‌های priority و قابل‌اعتماد کردن notification روی موبایل/PWA.
@@ -23,6 +22,7 @@ Vercel API / push wake-up
         |
         v
 Redis -> Web Push subscribers
+
         |
         v
 Web Push -> Service Worker on device
@@ -124,7 +124,7 @@ Web Push با VAPID کار می‌کند:
 
 - VAPID public key: client-side برای subscription
 - VAPID private key: فقط server-side
-- subscriptionهای Web Push در Redis نگهداری می‌شوند و به‌خاطر قطع موقت اینترنت حذف نمی‌شوند.
+- subscriptionهای Web Push در 
 
 ### Secret مربوط به wake-up
 
@@ -136,6 +136,7 @@ PUSH_WAKEUP_SECRET
 
 GitHub Actions:
 APP_URL
+
 PUSH_WAKEUP_SECRET
 ```
 
@@ -179,6 +180,7 @@ Feature `priority` عمداً از پروژه حذف شده است.
 - Service Worker / `worker/` — محل بررسی schedule و نمایش notification در background.
 - APIهای `app/api/push/*` — subscription و wake-up server endpoints.
 - `lib/server/pushStore.ts` — persistence و lifecycle Subscriberها در Redis.
+=======
 - `store/settingsStore.ts` — settings بدون timezone و با `showCategories`.
 - `.github/workflows/*` — CI و wake-up cron.
 - Vercel environment — Redis، VAPID و `PUSH_WAKEUP_SECRET`.
@@ -203,7 +205,7 @@ Feature `priority` عمداً از پروژه حذف شده است.
 - تفکیک `notificationEnabled` از `subscriptionStatus`
 - ثبت زمان‌های lifecycle مربوط به Subscriber
 - همگام‌سازی خاموش/روشن کردن Notification از Settings با Subscriber سمت server
-- اضافه شدن پنل عمومی مدیریت Subscriberها برای تست اولیه
+- اضافه شدن پنل عمومی مدیریت Subscribe
 
 ### قبل از merge نهایی باید بررسی شود
 
@@ -218,6 +220,10 @@ Feature `priority` عمداً از پروژه حذف شده است.
 - تست خاموش/روشن کردن category visibility و taskهای دارای/فاقد category
 - تست خاموش کردن Notification از Settings و اطمینان از skip شدن wake-up برای آن Subscriber
 - بررسی و رفع مشکل فعلی ثبت نشدن Subscriber در Redis در محیط Vercel/Upstash
+=======
+- پاک شدن subscriptionهای نامعتبر از Redis
+- بررسی نهایی Service Worker روی Android/iOS
+- تست خاموش/روشن کردن category visibility و taskهای دارای/فاقد category
 
 ## قانون برای refactorهای بعدی
 
