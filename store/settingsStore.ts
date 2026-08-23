@@ -8,6 +8,7 @@ type SettingsState = AppSettings & {
   setWeekDayOrientation: (value: "horizontal" | "vertical") => Promise<void>;
   setShowTaskProgress: (value: boolean) => Promise<void>;
   setShowTaskTimes: (value: boolean) => Promise<void>;
+  setShowTaskPriority: (value: boolean) => Promise<void>;
   setShowCategories: (value: boolean) => Promise<void>;
   setNotificationsEnabled: (value: boolean) => Promise<void>;
   setNotificationMinutesBefore: (value: number) => Promise<void>;
@@ -19,6 +20,7 @@ const defaultSettings: AppSettings = {
   weekDayOrientation: "horizontal",
   showTaskProgress: true,
   showTaskTimes: true,
+  showTaskPriority: true,
   showCategories: true,
   notificationsEnabled: false,
   notificationMinutesBefore: 0,
@@ -34,7 +36,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       set({ ...defaultSettings, ...saved, initialized: true });
       return;
     }
-
     await db.settings.put(defaultSettings);
     set({ ...defaultSettings, initialized: true });
   },
@@ -57,6 +58,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setShowTaskTimes: async (value) => {
     await db.settings.update("app", { showTaskTimes: value });
     set({ showTaskTimes: value });
+  },
+
+  setShowTaskPriority: async (value) => {
+    await db.settings.update("app", { showTaskPriority: value });
+    set({ showTaskPriority: value });
   },
 
   setShowCategories: async (value) => {
