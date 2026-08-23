@@ -31,27 +31,26 @@ export function usePwa(): PwaContextType {
       window.matchMedia("(display-mode: standalone)").matches ||
       ("standalone" in navigator &&
         (navigator as Navigator & { standalone?: boolean }).standalone === true);
+    const testMode = new URLSearchParams(window.location.search).get("pwa-test") === "true";
 
     setIsIOS(ios);
     setIsAndroid(android);
     setIsDesktop(desktop);
     setIsInstalled(standalone);
 
-    if (standalone) {
+    if (standalone && !testMode) {
       return;
     }
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
 
-      // A new install prompt after a previous installation means the app
-      // has become installable again, e.g. after the PWA was uninstalled.
       if (localStorage.getItem(PWA_INSTALLED_KEY) === "1") {
         localStorage.removeItem(PWA_INSTALLED_KEY);
         clearSeen();
       }
 
-      if (usePwaStore.getState().installSeen) {
+      if (!testMode && usePwaStore.getState().installSeen) {
         return;
       }
 
@@ -72,7 +71,15 @@ export function usePwa(): PwaContextType {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleInstalled);
 
-    if (ios && !installSeen) {
+    if (testMode) {
+      // Test mode intentionally bypasses the one-time banner suppression.
+      // On iOS the install guide is shown; on Chromium browsers the native
+      // prompt is shown when beforeinstallprompt becomes available.
+      setShowBanner(true);
+      if (localStorage.getItem(PWA_INSTALLED_KEY) === "1") {
+        localStorage.removeItem(PWA_INSTALLED_KEY);
+      }
+    } else if (ios && !installSeen) {
       setShowBanner(true);
     }
 
