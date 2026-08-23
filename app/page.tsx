@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { Button, IconButton } from "@mui/material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { db, Priority, Task, WeekDay } from "@/lib/db";
@@ -30,14 +31,7 @@ export default function Home() {
   const tasks = useLiveQuery(() => db.tasks.orderBy("order").toArray(), []) ?? [];
   const categories = useLiveQuery(() => db.categories.orderBy("createdAt").toArray(), []) ?? [];
 
-  const {
-    showWeekDayTabs,
-    weekDayOrientation,
-    showTaskProgress,
-    showTaskTimes,
-    showTaskPriority,
-    showCategories,
-  } = useSettingsStore();
+  const { showWeekDayTabs, weekDayOrientation, showTaskProgress, showTaskTimes, showTaskPriority, showCategories } = useSettingsStore();
   const initialize = useSettingsStore((state) => state.initialize);
 
   const visibleTasks = selectedDay === "all" ? tasks : tasks.filter((item) => item.scheduledDays.includes(selectedDay));
@@ -47,9 +41,7 @@ export default function Home() {
   }, [initialize]);
 
   useEffect(() => {
-    if (showCategories && !categoryId && categories.length > 0) {
-      setCategoryId(categories[0].id!);
-    }
+    if (showCategories && !categoryId && categories.length > 0) setCategoryId(categories[0].id!);
   }, [showCategories, categoryId, categories]);
 
   const addHistory = async (taskId: number, title: string, action: "created" | "completed" | "deleted") => {
@@ -59,19 +51,8 @@ export default function Home() {
   const addTask = async () => {
     const title = task.trim();
     if (!title || (showCategories && !categoryId)) return;
-
     const order = tasks.length > 0 ? Math.max(...tasks.map((item) => item.order)) + 1 : 0;
-    const id = await db.tasks.add({
-      title,
-      completed: false,
-      priority,
-      ...(showCategories && categoryId ? { categoryId } : {}),
-      order,
-      scheduledDays,
-      scheduledTimes,
-      createdAt: new Date().toISOString(),
-    });
-
+    const id = await db.tasks.add({ title, completed: false, priority, ...(showCategories && categoryId ? { categoryId } : {}), order, scheduledDays, scheduledTimes, createdAt: new Date().toISOString() });
     await addHistory(id, title, "created");
     setTask("");
     setPriority("medium");
@@ -96,11 +77,9 @@ export default function Home() {
     const oldIndex = tasks.findIndex((item) => item.id === activeId);
     const newIndex = tasks.findIndex((item) => item.id === overId);
     if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
-
     const reorderedTasks = [...tasks];
     const [movedTask] = reorderedTasks.splice(oldIndex, 1);
     reorderedTasks.splice(newIndex, 0, movedTask);
-
     await db.transaction("rw", db.tasks, async () => {
       await Promise.all(reorderedTasks.map((item, index) => db.tasks.update(item.id!, { order: index })));
     });
@@ -119,23 +98,15 @@ export default function Home() {
                 <PrioritySelect value={priority} onChange={setPriority} className="flex-1" />
                 {showCategories && <CategorySelect value={categoryId} onChange={setCategoryId} className="flex-1" />}
               </div>
-              <Button type="button" onClick={addTask} disabled={showCategories && !categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "flex", sm: "none" }, minWidth: "auto", height: 40, px: 2, borderRadius: 2, fontSize: 14, fontWeight: 500, color: "success.main", "&:hover": { backgroundColor: "action.hover" }, "&.Mui-disabled": { color: "text.disabled" } }}>
-                افزودن
-              </Button>
-              <IconButton type="button" onClick={addTask} disabled={showCategories && !categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "none", sm: "inline-flex" }, width: 40, height: 40 }}>
-                <AddCircleIcon fontSize="medium" />
-              </IconButton>
+              <Button type="button" onClick={addTask} disabled={showCategories && !categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "flex", sm: "none" }, minWidth: "auto", height: 40, px: 2, borderRadius: 2, fontSize: 14, fontWeight: 500, color: "success.main", "&:hover": { backgroundColor: "action.hover" }, "&.Mui-disabled": { color: "text.disabled" } }}>افزودن</Button>
+              <IconButton type="button" onClick={addTask} disabled={showCategories && !categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "none", sm: "inline-flex" }, width: 40, height: 40 }}><AddCircleIcon fontSize="medium" /></IconButton>
             </div>
           </div>
         </section>
-
         {showTaskProgress && <div className="shrink-0"><TaskProgress completed={visibleTasks.filter((item) => item.completed).length} total={visibleTasks.length} /></div>}
-
         <div className={weekDayOrientation === "horizontal" ? "flex min-h-0 flex-1 flex-col gap-2" : "flex min-h-0 flex-1 flex-row-reverse gap-2"}>
           {showWeekDayTabs && <WeekDayTabs value={selectedDay} onChange={setSelectedDay} orientation={weekDayOrientation} />}
-          <div className="tasks-scroll min-h-0 flex-1 overflow-y-auto pb-4">
-            <SortableTaskList tasks={visibleTasks} categories={categories} onToggle={toggleTask} onDelete={deleteTask} onReorder={reorderTasks} showTaskTimes={showTaskTimes} showTaskPriority={showTaskPriority} />
-          </div>
+          <div className="tasks-scroll min-h-0 flex-1 overflow-y-auto pb-4"><SortableTaskList tasks={visibleTasks} categories={categories} onToggle={toggleTask} onDelete={deleteTask} onReorder={reorderTasks} showTaskTimes={showTaskTimes} showTaskPriority={showTaskPriority} /></div>
         </div>
       </div>
     </main>
