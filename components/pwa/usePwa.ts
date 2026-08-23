@@ -16,7 +16,6 @@ export function usePwa(): PwaContextType {
   const installSeen = usePwaStore((state) => state.installSeen);
   const hydrate = usePwaStore((state) => state.hydrate);
   const markSeen = usePwaStore((state) => state.markSeen);
-  const clearSeen = usePwaStore((state) => state.clearSeen);
 
   useEffect(() => {
     hydrate();
@@ -38,25 +37,19 @@ export function usePwa(): PwaContextType {
     setIsDesktop(desktop);
     setIsInstalled(standalone);
 
-    // Never show an install UI from an already-installed PWA,
-    // including when the test URL is used.
+    // An installed PWA must never show an install UI, including in test mode.
     if (standalone) return;
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
-
-      if (localStorage.getItem(PWA_INSTALLED_KEY) === "1") {
-        localStorage.removeItem(PWA_INSTALLED_KEY);
-        clearSeen();
-      }
-
-      // The normal site respects the user's previous dismissal.
-      // The explicit ?pwa-test=true URL is intentionally allowed to test installation again.
-      if (!testMode && usePwaStore.getState().installSeen) return;
-
       setPromptEvent(event as BeforeInstallPromptEvent);
       setCanInstall(true);
-      setShowBanner(true);
+
+      // Normal site: respect the user's previous dismissal.
+      // Test URL: explicitly allow the install prompt to be tested again.
+      if (testMode || !usePwaStore.getState().installSeen) {
+        setShowBanner(true);
+      }
     };
 
     const handleInstalled = () => {
@@ -71,20 +64,19 @@ export function usePwa(): PwaContextType {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleInstalled);
 
-    // iOS does not expose beforeinstallprompt, so the test URL can still
-    // open the existing iOS installation guide when the app is not installed.
-    if (testMode && ios) {
-      setShowBanner(true);
-    } else if (!testMode && ios && !installSeen) {
-      setShowBanner(true);
-      markSeen();
+    // iOS has no beforeinstallprompt event. The test URL always opens
+    // the manual installation guide when the site is not already installed.
+    if (ios) {
+      if (testMode || !installSeen) {
+        setShowBanner(true);
+      }
     }
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleInstalled);
     };
-  }, [clearSeen, installSeen, markSeen]);
+  }, [installSeen, markSeen, hydrate]);
 
   const install = useCallback(async () => {
     if (!promptEvent) return;
