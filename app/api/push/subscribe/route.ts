@@ -10,9 +10,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid push subscription" }, { status: 400 });
     }
 
-    await savePushSubscription(body);
+    const subscriber = await savePushSubscription(body);
 
-    await sendPushNotification(body, {
+    await sendPushNotification(subscriber, {
       type: "TEST_NOTIFICATION",
       title: "این کارته",
       body: "Web Push با موفقیت به دستگاه شما رسید.",

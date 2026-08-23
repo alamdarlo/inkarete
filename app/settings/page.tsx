@@ -9,6 +9,7 @@ import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import { useSettingsStore } from "@/store/settingsStore";
 import { showTaskNotification } from "@/lib/notifications";
 import { requestNotificationPermission } from "@/lib/notificationSupport";
+import { setPushNotificationPreference, subscribeToPush } from "@/lib/push";
 import { subscribeToPush } from "@/lib/push";
 
 export default function SettingsPage() {
@@ -41,8 +42,19 @@ export default function SettingsPage() {
       return;
     }
 
+    const subscribed = await subscribeToPush();
+    if (!subscribed) {
+      await setNotificationsEnabled(false);
+      return;
+    }
+
     await setNotificationsEnabled(true);
-    await subscribeToPush();
+    await setPushNotificationPreference(true);
+  };
+
+  const disableNotifications = async () => {
+    await setNotificationsEnabled(false);
+    await setPushNotificationPreference(false);
   };
 
   return (
@@ -98,7 +110,7 @@ export default function SettingsPage() {
               <div className="mt-1 text-xs text-slate-400">{notificationsEnabled ? "اعلان‌های کارها فعال است." : "برای دریافت یادآوری کارها اعلان‌ها را فعال کنید."}</div>
             </div>
             {!notificationsEnabled && <button type="button" onClick={enableNotifications} className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-indigo-700">فعال کردن</button>}
-            {notificationsEnabled && <button type="button" onClick={() => setNotificationsEnabled(false)} className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-500 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">خاموش کردن</button>}
+            {notificationsEnabled && <button type="button" onClick={disableNotifications} className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-500 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">خاموش کردن</button>}
           </div>
 
           {notificationsEnabled && (
