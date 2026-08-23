@@ -1,6 +1,7 @@
 import Dexie, { Table } from "dexie";
 
 export type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type Priority = "low" | "medium" | "high";
 
 export type TaskSchedule = {
   id: string;
@@ -26,6 +27,7 @@ export type Task = {
   id?: number;
   title: string;
   completed: boolean;
+  priority: Priority;
   categoryId?: number;
   order: number;
   scheduledDays: WeekDay[];
@@ -49,6 +51,7 @@ export type AppSettings = {
   weekDayOrientation: "horizontal" | "vertical";
   showTaskProgress: boolean;
   showTaskTimes: boolean;
+  showTaskPriority: boolean;
   showCategories: boolean;
   notificationsEnabled: boolean;
   notificationMinutesBefore: number;
@@ -78,12 +81,9 @@ export class AppDatabase extends Dexie {
         settings: "id",
       })
       .upgrade(async (transaction) => {
-        await transaction
-          .table<AppSettings, string>("settings")
-          .toCollection()
-          .modify((settings) => {
-            delete (settings as AppSettings & { timeZone?: string }).timeZone;
-          });
+        await transaction.table<AppSettings, string>("settings").toCollection().modify((settings) => {
+          delete (settings as AppSettings & { timeZone?: string }).timeZone;
+        });
       });
 
     this.version(5)
@@ -94,19 +94,12 @@ export class AppDatabase extends Dexie {
         settings: "id",
       })
       .upgrade(async (transaction) => {
-        await transaction
-          .table("tasks")
-          .toCollection()
-          .modify((task) => {
-            delete task.priority;
-          });
-
-        await transaction
-          .table("settings")
-          .toCollection()
-          .modify((settings) => {
-            delete settings.timeZone;
-          });
+        await transaction.table("tasks").toCollection().modify((task) => {
+          delete task.priority;
+        });
+        await transaction.table("settings").toCollection().modify((settings) => {
+          delete settings.timeZone;
+        });
       });
 
     this.version(6)
@@ -117,12 +110,25 @@ export class AppDatabase extends Dexie {
         settings: "id",
       })
       .upgrade(async (transaction) => {
-        await transaction
-          .table<AppSettings, string>("settings")
-          .toCollection()
-          .modify((settings) => {
-            settings.showCategories = false;
-          });
+        await transaction.table<AppSettings, string>("settings").toCollection().modify((settings) => {
+          settings.showCategories = false;
+        });
+      });
+
+    this.version(7)
+      .stores({
+        tasks: "++id, completed, priority, createdAt, order",
+        history: "++id, action, createdAt, taskId",
+        categories: "++id, name, createdAt",
+        settings: "id",
+      })
+      .upgrade(async (transaction) => {
+        await transaction.table("tasks").toCollection().modify((task) => {
+          task.priority = task.priority ?? "medium";
+        });
+        await transaction.table("settings").toCollection().modify((settings) => {
+          settings.showTaskPriority = true;
+        });
       });
 
     this.on("populate", async () => {
