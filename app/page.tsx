@@ -91,15 +91,17 @@ export default function Home() {
         <section className="mb-1 shrink-0 rounded-xl bg-white p-3 text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400">
           <div className="flex flex-col gap-2">
             <input value={task} onChange={(event) => setTask(event.target.value)} placeholder="کار جدید..." className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder:text-slate-400" />
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="flex flex-1 items-center gap-1">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-1">
                 <ScheduleSelect value={scheduledDays} onChange={setScheduledDays} className="flex-1" />
                 <TimeSelect value={scheduledTimes} onChange={setScheduledTimes} />
+              </div>
+              <div className="flex items-center gap-1">
                 <PrioritySelect value={priority} onChange={setPriority} className="flex-1" />
                 {showCategories && <CategorySelect value={categoryId} onChange={setCategoryId} className="flex-1" />}
+                <Button type="button" onClick={addTask} disabled={showCategories && !categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "flex", sm: "none" }, minWidth: "auto", height: 40, px: 2, borderRadius: 2, fontSize: 14, fontWeight: 500, color: "success.main", "&:hover": { backgroundColor: "action.hover" }, "&.Mui-disabled": { color: "text.disabled" } }}>افزودن</Button>
+                <IconButton type="button" onClick={addTask} disabled={showCategories && !categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "none", sm: "inline-flex" }, width: 40, height: 40 }}><AddCircleIcon fontSize="medium" /></IconButton>
               </div>
-              <Button type="button" onClick={addTask} disabled={showCategories && !categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "flex", sm: "none" }, minWidth: "auto", height: 40, px: 2, borderRadius: 2, fontSize: 14, fontWeight: 500, color: "success.main", "&:hover": { backgroundColor: "action.hover" }, "&.Mui-disabled": { color: "text.disabled" } }}>افزودن</Button>
-              <IconButton type="button" onClick={addTask} disabled={showCategories && !categories.length} color="success" aria-label="افزودن کار" title="افزودن کار" sx={{ display: { xs: "none", sm: "inline-flex" }, width: 40, height: 40 }}><AddCircleIcon fontSize="medium" /></IconButton>
             </div>
           </div>
         </section>
