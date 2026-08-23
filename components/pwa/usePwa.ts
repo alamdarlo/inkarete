@@ -79,6 +79,7 @@ export function usePwa(): PwaContextType {
       }
     } else if (ios && !installSeen) {
       setShowBanner(true);
+      markSeen();
     }
 
     return () => {
