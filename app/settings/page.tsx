@@ -18,12 +18,14 @@ export default function SettingsPage() {
     showTaskProgress,
     showTaskTimes,
     showCategories,
+    showTaskPriority,
     initialize,
     setShowWeekDayTabs,
     setWeekDayOrientation,
     setShowTaskProgress,
     setShowTaskTimes,
     setShowCategories,
+    setShowTaskPriority,
     notificationsEnabled,
     setNotificationsEnabled,
     notificationMinutesBefore,
@@ -37,36 +39,30 @@ export default function SettingsPage() {
   const enableNotifications = async () => {
     try {
       const support = getNotificationSupportInfo();
-
       if (!support.supported) {
         alert("مرورگر شما از اعلان پشتیبانی نمی‌کند.");
         return;
       }
-
       if (support.requiresInstall) {
         alert("برای فعال کردن اعلان در iPhone یا iPad، ابتدا برنامه را از Safari به صفحه اصلی (Add to Home Screen) اضافه و از نسخه نصب‌شده وارد شوید.");
         return;
       }
-
       if (!support.hasServiceWorker) {
         alert("سرویس برنامه آماده نیست. لطفاً برنامه را Refresh کنید و دوباره تلاش کنید.");
         return;
       }
-
       const permission = await requestNotificationPermission();
       if (permission !== "granted") {
         await setNotificationsEnabled(false);
         alert(permission === "denied" ? "دسترسی اعلان‌ها در تنظیمات دستگاه یا مرورگر مسدود است." : "دسترسی اعلان‌ها داده نشد.");
         return;
       }
-
       const subscribed = await subscribeToPush();
       if (!subscribed) {
         await setNotificationsEnabled(false);
         alert("ثبت اشتراک اعلان انجام نشد. لطفاً اتصال اینترنت و نصب بودن نسخه PWA را بررسی کنید.");
         return;
       }
-
       await setNotificationsEnabled(true);
       const synced = await setPushNotificationPreference(true);
       if (!synced) {
@@ -126,6 +122,10 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between border-t border-slate-100 py-2 dark:border-slate-700">
             <div><div className="text-sm">نمایش دسته‌بندی‌ها</div><div className="mt-0.5 text-xs text-slate-400">نمایش انتخاب دسته‌بندی هنگام ایجاد کار و دسته‌بندی روی کارها</div></div>
             <Switch checked={showCategories} onChange={(event) => setShowCategories(event.target.checked)} />
+          </div>
+          <div className="flex items-center justify-between border-t border-slate-100 py-2 dark:border-slate-700">
+            <div><div className="text-sm">نمایش اولویت کارها</div><div className="mt-0.5 text-xs text-slate-400">نمایش اولویت و انتخاب اولویت برای کارها</div></div>
+            <Switch checked={showTaskPriority} onChange={(event) => setShowTaskPriority(event.target.checked)} />
           </div>
         </section>
 
