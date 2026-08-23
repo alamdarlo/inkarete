@@ -5,6 +5,8 @@ import { BeforeInstallPromptEvent, PwaContextType } from "./types";
 import { PWA_INSTALLED_KEY } from "./constants";
 import { usePwaStore } from "@/store/pwaStore";
 
+const PWA_TEST_SEEN_KEY = "inkarete:pwa-test-seen";
+
 export function usePwa(): PwaContextType {
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [canInstall, setCanInstall] = useState(false);
@@ -32,15 +34,15 @@ export function usePwa(): PwaContextType {
       ("standalone" in navigator &&
         (navigator as Navigator & { standalone?: boolean }).standalone === true);
     const testMode = new URLSearchParams(window.location.search).get("pwa-test") === "true";
+    const testSeen = sessionStorage.getItem(PWA_TEST_SEEN_KEY) === "1";
 
     setIsIOS(ios);
     setIsAndroid(android);
     setIsDesktop(desktop);
     setIsInstalled(standalone);
 
-    if (standalone && !testMode) {
-      return;
-    }
+    if (standalone && !testMode) return;
+    if (testMode && testSeen) return;
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
@@ -50,9 +52,7 @@ export function usePwa(): PwaContextType {
         clearSeen();
       }
 
-      if (!testMode && usePwaStore.getState().installSeen) {
-        return;
-      }
+      if (!testMode && usePwaStore.getState().installSeen) return;
 
       setPromptEvent(event as BeforeInstallPromptEvent);
       setCanInstall(true);
@@ -72,10 +72,8 @@ export function usePwa(): PwaContextType {
     window.addEventListener("appinstalled", handleInstalled);
 
     if (testMode) {
-      // Test mode intentionally bypasses the one-time banner suppression.
-      // On iOS the install guide is shown; on Chromium browsers the native
-      // prompt is shown when beforeinstallprompt becomes available.
       setShowBanner(true);
+      sessionStorage.setItem(PWA_TEST_SEEN_KEY, "1");
       if (localStorage.getItem(PWA_INSTALLED_KEY) === "1") {
         localStorage.removeItem(PWA_INSTALLED_KEY);
       }
