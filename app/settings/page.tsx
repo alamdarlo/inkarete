@@ -8,7 +8,7 @@ import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import { useSettingsStore } from "@/store/settingsStore";
 import { showTaskNotification } from "@/lib/notifications";
-import { requestNotificationPermission } from "@/lib/notificationSupport";
+import { getNotificationSupportInfo, requestNotificationPermission } from "@/lib/notificationSupport";
 import { setPushNotificationPreference, subscribeToPush } from "@/lib/push";
 
 export default function SettingsPage() {
@@ -35,20 +35,50 @@ export default function SettingsPage() {
   }, [initialize]);
 
   const enableNotifications = async () => {
-    const permission = await requestNotificationPermission();
-    if (permission !== "granted") {
-      await setNotificationsEnabled(false);
-      return;
-    }
+    try {
+      const support = getNotificationSupportInfo();
 
-    const subscribed = await subscribeToPush();
-    if (!subscribed) {
-      await setNotificationsEnabled(false);
-      return;
-    }
+      if (!support.supported) {
+        alert("مرورگر شما از اعلان پشتیبانی نمی‌کند.");
+        return;
+      }
 
-    await setNotificationsEnabled(true);
-    await setPushNotificationPreference(true);
+      if (support.requiresInstall) {
+        alert("برای فعال کردن اعلان در iPhone یا iPad، ابتدا برنامه را از Safari به صفحه اصلی (Add to Home Screen) اضافه و از نسخه نصب‌شده وارد شوید.");
+        return;
+      }
+
+      if (!support.hasServiceWorker) {
+        alert("سرویس برنامه آماده نیست. لطفاً برنامه را Refresh کنید و دوباره تلاش کنید.");
+        return;
+      }
+
+      const permission = await requestNotificationPermission();
+      if (permission !== "granted") {
+        await setNotificationsEnabled(false);
+        alert(permission === "denied" ? "دسترسی اعلان‌ها در تنظیمات دستگاه یا مرورگر مسدود است." : "دسترسی اعلان‌ها داده نشد.");
+        return;
+      }
+
+      const subscribed = await subscribeToPush();
+      if (!subscribed) {
+        await setNotificationsEnabled(false);
+        alert("ثبت اشتراک اعلان انجام نشد. لطفاً اتصال اینترنت و نصب بودن نسخه PWA را بررسی کنید.");
+        return;
+      }
+
+      await setNotificationsEnabled(true);
+      const synced = await setPushNotificationPreference(true);
+      if (!synced) {
+        await setNotificationsEnabled(false);
+        alert("اشتراک اعلان ثبت شد، اما همگام‌سازی تنظیمات با سرور انجام نشد.");
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to enable notifications", error);
+      await setNotificationsEnabled(false);
+      alert("فعال‌سازی اعلان‌ها با خطا مواجه شد. لطفاً برنامه را Refresh کنید و دوباره تلاش کنید.");
+    }
   };
 
   const disableNotifications = async () => {
